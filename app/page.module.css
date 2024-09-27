@@ -1,3 +1,9 @@
 .main {
+  padding: var(--mantine-spacing-xl);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  height: 100vh;
+  gap: var(--mantine-spacing-md)
   
 }
