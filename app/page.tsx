@@ -6,7 +6,8 @@ import { search } from "./actions";
 export default function Home() {
   async function query(formData: FormData) {
     "use server";
-    search(formData);
+    const data = await search(formData);
+    // console.log(data);
   }
 
   return (
