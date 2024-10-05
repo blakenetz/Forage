@@ -1,11 +1,5 @@
 .results {}
 
-.section {
-  display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  gap: var(--mantine-spacing-sm);
-}
-
 .card {
   justify-content: space-between;
 }
