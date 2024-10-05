@@ -32,12 +32,13 @@ type QueryMap = PartialRecord<
   {
     selectors: string[];
     callback?: (els: HTMLElement[]) => string;
-    query?: "single" | "all";
   }
 >;
 
+const imageCallback = (els: HTMLElement[]) => els[0].getAttribute("src")!;
+
 /** All queries created by Claude AI */
-const queries: Record<Source, QueryMap> = {
+const queries: PartialRecord<Source, QueryMap> = {
   nyTimes: {
     title: { selectors: ['h3[class^="pantry--ui-strong"]', "a h3"] },
     author: {
@@ -53,7 +54,7 @@ const queries: Record<Source, QueryMap> = {
     },
     img: {
       selectors: ['img[class^="cardimage_image"]', "a figure img"],
-      callback: (els) => els[0].getAttribute("src") ?? "",
+      callback: imageCallback,
     },
     time: {
       selectors: [
@@ -66,7 +67,6 @@ const queries: Record<Source, QueryMap> = {
         'span[class^="recipecard_stars"] svg[class*="filledStar"]',
         'a section div[class*="rating"] span[class*="filledStar"]',
       ],
-      query: "all",
       callback: (els) => els.length.toString(),
     },
     ratingCount: {
@@ -77,36 +77,26 @@ const queries: Record<Source, QueryMap> = {
     },
   },
   seriousEats: {
-    title: { selectors: [] },
-    author: { selectors: [] },
-    link: { selectors: [] },
-    img: { selectors: [] },
-    time: { selectors: [] },
-    rating: { selectors: [] },
-    ratingCount: { selectors: [] },
+    title: { selectors: [".card__title .card__underline"] },
+    author: { selectors: [".card__author-name[data-byline-author]::after"] },
+    link: {
+      selectors: ["a"],
+      callback: (els) => els[0].getAttribute("href")!,
+    },
+    img: { selectors: [".card__media img"], callback: imageCallback },
   },
+  // BA and Epicurious have same structure
   bonAppetit: {
-    title: { selectors: [] },
-    author: { selectors: [] },
-    link: { selectors: [] },
-    img: { selectors: [] },
-    time: { selectors: [] },
-    rating: { selectors: [] },
-    ratingCount: { selectors: [] },
-  },
-  epicurious: {
-    title: { selectors: [] },
-    author: { selectors: [] },
-    link: { selectors: [] },
-    img: { selectors: [] },
-    time: { selectors: [] },
-    rating: { selectors: [] },
-    ratingCount: { selectors: [] },
+    title: { selectors: ["h2"] },
+    description: { selectors: ["h2 + div"] },
+    link: { selectors: ['a[href^="/recipe/"]'] },
+    rating: { selectors: ['[role="group"][aria-label="Rating"]'] },
+    img: { selectors: ["img.responsive-image__image"] },
   },
 };
 
 function extractRecipe(source: Source, root: HTMLElement): RecipeData {
-  const selectorKeys = queries[source];
+  const selectorKeys = queries[source]!;
 
   return Object.keys(selectorKeys).reduce<RecipeData>(
     (acc, key) => {
@@ -156,25 +146,45 @@ function parseRecipeData(data: RecipeData): Recipe {
   };
 }
 
-export async function queryNyTimes(query: string): Promise<Recipe[]> {
+async function fetchByQuery(query: string) {
   const res = await fetch("https://cooking.nytimes.com/search?q=" + query);
   const html = await res.text();
-  const root = parse(html);
+  return parse(html);
+}
 
+export async function queryNyTimes(query: string): Promise<Recipe[]> {
+  const root = await fetchByQuery(
+    "https://cooking.nytimes.com/search?q=" + query
+  );
   const cards = root.querySelectorAll('article[class*="card"]');
   const extract = extractRecipe.bind(null, "nyTimes");
 
   return cards.map(extract).map(parseRecipeData);
 }
 
-export async function querySeriousEats(_query: string): Promise<Recipe[]> {
-  return [];
+export async function querySeriousEats(query: string): Promise<Recipe[]> {
+  const root = await fetchByQuery(
+    "https://www.seriouseats.com/search?q=" + query
+  );
+  const cards = root.querySelectorAll(".card-list__item");
+  const extract = extractRecipe.bind(null, "seriousEats");
+  return cards.map(extract).map(parseRecipeData);
 }
 
-export async function queryBonAppetit(_query: string): Promise<Recipe[]> {
-  return [];
+export async function queryBonAppetit(query: string): Promise<Recipe[]> {
+  const root = await fetchByQuery(
+    `https://www.bonappetit.com/search?q=${query}&content=recipe`
+  );
+  const cards = root.querySelectorAll("[class^='search_result_item']");
+  const extract = extractRecipe.bind(null, "bonAppetit");
+  return cards.map(extract).map(parseRecipeData);
 }
 
-export async function queryEpicurious(_query: string): Promise<Recipe[]> {
-  return [];
+export async function queryEpicurious(query: string): Promise<Recipe[]> {
+  const root = await fetchByQuery(
+    `https://www.epicurious.com/search?q=${query}&content=recipe`
+  );
+  const cards = root.querySelectorAll("[class^='search_result_item']");
+  const extract = extractRecipe.bind(null, "bonAppetit");
+  return cards.map(extract).map(parseRecipeData);
 }
