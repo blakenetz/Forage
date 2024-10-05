@@ -4,7 +4,10 @@ const nextConfig = {
     optimizePackageImports: ["@mantine/core", "@mantine/hooks"],
   },
   images: {
-    remotePatterns: [{ hostname: "**.nyt.com" }],
+    remotePatterns: [
+      { hostname: "**.nyt.com" },
+      { hostname: "images.unsplash.com" },
+    ],
   },
 };
 
