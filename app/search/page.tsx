@@ -1,7 +1,6 @@
-import { TextInput, Title } from "@mantine/core";
-import { IconSearch } from "@tabler/icons-react";
+import { Title } from "@mantine/core";
+
 import { type NextRequest } from "next/server";
-import { useState } from "react";
 
 export function GET(request: NextRequest) {
   const { searchParams } = request.nextUrl;
@@ -17,7 +16,7 @@ export default function Search({
   return (
     <main>
       <Title>Recipeas!</Title>
-      <form action={}>
+      {/* <form action={}>
         <TextInput
           leftSection={<IconSearch />}
           name="q"
@@ -25,7 +24,7 @@ export default function Search({
           placeholder="Find a recipe"
           required
         />
-      </form>
+      </form> */}
     </main>
   );
 }
