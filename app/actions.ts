@@ -2,9 +2,9 @@
 
 import { parse, HTMLElement } from "node-html-parser";
 
-type Source = "nyTimes" | "seriousEats" | "bonAppetit" | "epicurious";
+export type Source = "nyTimes" | "seriousEats" | "bonAppetit" | "epicurious";
 
-type RecipeData = {
+export type Recipe = {
   title?: string;
   author?: string;
   link?: string;
@@ -13,11 +13,10 @@ type RecipeData = {
   rating?: string;
   ratingCount?: string;
 };
-
-type Recipe = RecipeData & { source: Source };
+export type Results = Record<Source, Recipe[]>;
 
 type QueryMap = Record<
-  keyof RecipeData,
+  keyof Recipe,
   {
     selectors: string[];
     callback?: (els: HTMLElement[]) => string;
@@ -25,6 +24,7 @@ type QueryMap = Record<
   }
 >;
 
+/** All queries created by Claude AI */
 const queries: Record<Source, QueryMap> = {
   nyTimes: {
     title: { selectors: ['h3[class^="pantry--ui-strong"]', "a h3"] },
@@ -93,13 +93,13 @@ const queries: Record<Source, QueryMap> = {
   },
 };
 
-function extractRecipeData(source: Source, root: HTMLElement) {
+function extractRecipe(source: Source, root: HTMLElement) {
   const selectorKeys = queries[source];
 
   return {
     source,
-    ...Object.keys(selectorKeys).reduce<RecipeData>((acc, key) => {
-      const __key = key as keyof RecipeData;
+    ...Object.keys(selectorKeys).reduce<Recipe>((acc, key) => {
+      const __key = key as keyof Recipe;
       const { selectors, callback } = selectorKeys[__key];
 
       acc[__key] = selectors.reduce<string>((val, sel) => {
@@ -117,35 +117,33 @@ function extractRecipeData(source: Source, root: HTMLElement) {
   };
 }
 
-export async function search(formData: FormData) {
-  const query = extract(formData.get("search"));
-
-  return Promise.all([
-    queryNyTimes(query),
-    querySeriousEats(query),
-    queryBonAppetit(query),
-    queryEpicurious(query),
-  ]);
-}
-
 function extract(value: FormDataEntryValue | null): string {
   return value && typeof value === "string" ? value : "";
 }
+function getQuery(formData: FormData) {
+  return extract(formData.get("search"));
+}
 
-async function queryNyTimes(query: string): Promise<Recipe[]> {
+export async function queryNyTimes(formData: FormData): Promise<Recipe[]> {
+  const query = getQuery(formData);
+
   const res = await fetch("https://cooking.nytimes.com/search?q=" + query);
   const html = await res.text();
   const root = parse(html);
+
   const cards = root.querySelectorAll('article[class*="card"]');
 
-  return cards.map((card) => extractRecipeData("nyTimes", card));
+  return cards.map((card) => extractRecipe("nyTimes", card));
 }
-async function querySeriousEats(query: string) {
-  return query;
+export async function querySeriousEats(formData: FormData): Promise<Recipe[]> {
+  const _query = getQuery(formData);
+  return [];
 }
-async function queryBonAppetit(query: string) {
-  return query;
+export async function queryBonAppetit(formData: FormData): Promise<Recipe[]> {
+  const _query = getQuery(formData);
+  return [];
 }
-async function queryEpicurious(query: string) {
-  return query;
+export async function queryEpicurious(formData: FormData): Promise<Recipe[]> {
+  const _query = getQuery(formData);
+  return [];
 }
