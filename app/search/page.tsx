@@ -1,7 +1,7 @@
 import NextImage from "next/image";
 
 import { param } from "@/util";
-import { Card, CardSection, Title } from "@mantine/core";
+import { Card, CardSection, Group, Text, Title } from "@mantine/core";
 import { redirect } from "next/navigation";
 
 import { type NextRequest } from "next/server";
@@ -28,21 +28,21 @@ export default async function Search({
     <main className={styles.main}>
       <Title>Recipeas!</Title>
       <section className={styles.results}>
-        <section className={styles.sections}>
+        <section className={styles.section}>
           {data.map((d) => (
-            <Card key={d.title}>
-              <CardSection>
+            <Card key={d.title} shadow="sm" padding="lg" radius="md" withBorder>
+              <CardSection className={styles.imageWrapper}>
                 <NextImage
                   src={d.img}
                   alt={d.title}
                   sizes="300px"
                   fill
-                  style={{
-                    objectFit: "contain",
-                  }}
+                  className={styles.image}
                 />
               </CardSection>
+
               <Title order={3}>{d.title}</Title>
+              {d.description && <Text>{d.description}</Text>}
             </Card>
           ))}
         </section>

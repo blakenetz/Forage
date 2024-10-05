@@ -1,1 +1,18 @@
 .results {}
+
+.section {
+  display: flex;
+  flex-direction: row;
+  gap: var(--mantine-spacing-md);
+  width: 100%;
+  overflow: scroll;
+}
+
+.imageWrapper {
+  position: relative;
+  height: 260px
+}
+
+.image {
+  object-fit: cover;
+}

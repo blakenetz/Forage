@@ -1,3 +1,7 @@
+export type PartialRecord<K extends string, T> = {
+  [P in K]?: T;
+};
+
 export const param = "q";
 
 export function extract(value: FormDataEntryValue | null): string {

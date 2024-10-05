@@ -1,22 +1,34 @@
 "use server";
 
+import { PartialRecord } from "@/util";
 import { parse, HTMLElement } from "node-html-parser";
 
 export type Source = "nyTimes" | "seriousEats" | "bonAppetit" | "epicurious";
 
-export type Recipe = {
+export type RecipeData = {
   title: string;
-  author?: string;
-  link?: string;
   img: string;
+  link: string;
+  author?: string;
+  description?: string;
   time?: string;
   rating?: string;
   ratingCount?: string;
 };
+
+export type Recipe = Pick<RecipeData, "title" | "img" | "link"> & {
+  description?: string;
+  meta: {
+    rating?: string;
+    ratingCount?: string;
+    time?: string;
+  };
+};
+
 export type Results = Record<Source, Recipe[]>;
 
-type QueryMap = Record<
-  keyof Recipe,
+type QueryMap = PartialRecord<
+  keyof RecipeData,
   {
     selectors: string[];
     callback?: (els: HTMLElement[]) => string;
@@ -93,13 +105,13 @@ const queries: Record<Source, QueryMap> = {
   },
 };
 
-function extractRecipe(source: Source, root: HTMLElement) {
+function extractRecipe(source: Source, root: HTMLElement): RecipeData {
   const selectorKeys = queries[source];
 
-  const data = Object.keys(selectorKeys).reduce<Recipe>(
+  return Object.keys(selectorKeys).reduce<RecipeData>(
     (acc, key) => {
-      const __key = key as keyof Recipe;
-      const { selectors, callback } = selectorKeys[__key];
+      const __key = key as keyof RecipeData;
+      const { selectors, callback } = selectorKeys[__key]!;
 
       const value = selectors.reduce<string>((val, sel) => {
         if (val) return val;
@@ -118,12 +130,22 @@ function extractRecipe(source: Source, root: HTMLElement) {
     {
       title: "Unknown",
       img: "https://images.unsplash.com/photo-1523049673857-eb18f1d7b578?q=80&w=3475&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+      link: "",
     }
   );
+}
 
+function parseRecipeData(data: RecipeData): Recipe {
   return {
-    source,
-    ...data,
+    title: data.title,
+    img: data.img,
+    link: data.link,
+    description: data.description ?? data.author,
+    meta: {
+      rating: data.rating,
+      ratingCount: data.ratingCount,
+      time: data.time,
+    },
   };
 }
 
@@ -133,15 +155,19 @@ export async function queryNyTimes(query: string): Promise<Recipe[]> {
   const root = parse(html);
 
   const cards = root.querySelectorAll('article[class*="card"]');
+  const extract = extractRecipe.bind(null, "nyTimes");
 
-  return cards.map((card) => extractRecipe("nyTimes", card));
+  return cards.map(extract).map(parseRecipeData);
 }
+
 export async function querySeriousEats(_query: string): Promise<Recipe[]> {
   return [];
 }
+
 export async function queryBonAppetit(_query: string): Promise<Recipe[]> {
   return [];
 }
+
 export async function queryEpicurious(_query: string): Promise<Recipe[]> {
   return [];
 }
