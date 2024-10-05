@@ -19,8 +19,8 @@ export type RecipeData = {
 export type Recipe = Pick<RecipeData, "title" | "img" | "link"> & {
   description?: string;
   meta: {
-    rating?: string;
-    ratingCount?: string;
+    rating?: number;
+    ratingCount?: number;
     time?: string;
   };
 };
@@ -135,6 +135,13 @@ function extractRecipe(source: Source, root: HTMLElement): RecipeData {
   );
 }
 
+function parseNumber(value: string | undefined): number | undefined {
+  const number = Number(value);
+
+  if (Number.isNaN(number)) return undefined;
+  return number;
+}
+
 function parseRecipeData(data: RecipeData): Recipe {
   return {
     title: data.title,
@@ -142,8 +149,8 @@ function parseRecipeData(data: RecipeData): Recipe {
     link: data.link,
     description: data.description ?? data.author,
     meta: {
-      rating: data.rating,
-      ratingCount: data.ratingCount,
+      rating: parseNumber(data.rating),
+      ratingCount: parseNumber(data.ratingCount),
       time: data.time,
     },
   };
