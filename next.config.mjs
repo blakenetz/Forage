@@ -8,6 +8,8 @@ const nextConfig = {
       { hostname: "**.nyt.com" },
       { hostname: "**.seriouseats.com" },
       { hostname: "images.unsplash.com" },
+      { hostname: "assets.bonappetit.com" },
+      { hostname: "assets.epicurious.com" },
     ],
   },
 };

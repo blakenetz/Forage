@@ -1,4 +1,5 @@
-import { generateSchema, PartialRecord, Schema } from "@/util";
+import { EpicuriousRecipe } from "@/types";
+import { PartialRecord } from "@/util";
 import { HTMLElement as ParserHTMLElement } from "node-html-parser";
 
 export const sources = [
@@ -53,7 +54,7 @@ export interface HTMLQuery extends BaseQuery {
 
 export interface ScriptQuery extends BaseQuery {
   source: "bonAppetit" | "epicurious";
-  extractor: (root: ParserHTMLElement) => Recipe[];
+  extractor: (source: Source, root: ParserHTMLElement) => Recipe[];
 }
 
 export type Query = HTMLQuery | ScriptQuery;
@@ -134,7 +135,12 @@ export const queries: Query[] = [
   },
 ];
 
-function epicuriousExtractor(root: ParserHTMLElement): Recipe[] {
+function epicuriousExtractor(
+  source: Source,
+  root: ParserHTMLElement
+): Recipe[] {
+  const baseUrl = `https://${source.toLocaleLowerCase()}.com`;
+
   const scriptEl = root
     .querySelectorAll('script[type="text/javascript"]')
     .filter(
@@ -144,18 +150,26 @@ function epicuriousExtractor(root: ParserHTMLElement): Recipe[] {
     .pop();
 
   if (!scriptEl) return [];
+
   const str = scriptEl.rawText
     .replace("window.__PRELOADED_STATE__ = ", "")
     .replace(/\;/g, "");
+
   try {
     const data = JSON.parse(str);
-    const items: Array<Schema> = data.transformed.search.items;
-    const schema = generateSchema(items);
-    console.log(schema);
+    const items: EpicuriousRecipe[] = data.transformed.search.items;
+    return items.map((item) => ({
+      title: item.dangerousHed,
+      img: item.image.sources.md.url,
+      link: new URL(item.url, baseUrl).toString(),
+      meta: {
+        rating: item.rating,
+        ratingCount: item.reviewsCount,
+      },
+    }));
   } catch (error) {
     console.log(error);
 
     return [];
   }
-  return [];
 }

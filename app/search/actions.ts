@@ -73,7 +73,8 @@ export async function fetchRecipeData(source: Source, query: string) {
 
     case "bonAppetit":
     case "epicurious":
-      return q.extractor(root);
+      const __extractor = q.extractor.bind(null, source);
+      return __extractor(root);
 
     default:
       return [];
