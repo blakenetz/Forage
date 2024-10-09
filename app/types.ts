@@ -18,7 +18,7 @@ export type EpicuriousRecipe = {
         dangerousBio: string;
         dangerousTitle: string;
         name: string;
-        url: "/contributor/claire-saffitz";
+        url: string;
       }[];
     };
   };
