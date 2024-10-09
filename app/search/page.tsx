@@ -24,7 +24,7 @@ export default async function Search({
   return (
     <main className={styles.main}>
       <Title>Recipeas!</Title>
-      <Accordion variant="filled" defaultValue="nyTimes">
+      <Accordion variant="filled" defaultValue="bonAppetit">
         {sources.map((source) => (
           <RecipeGrid key={source} source={source} query={query} />
         ))}

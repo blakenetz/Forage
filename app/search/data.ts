@@ -1,4 +1,4 @@
-import { PartialRecord } from "@/util";
+import { generateSchema, PartialRecord, Schema } from "@/util";
 import { HTMLElement as ParserHTMLElement } from "node-html-parser";
 
 export const sources = [
@@ -39,21 +39,28 @@ type QueryMap = PartialRecord<
   }
 >;
 
-const condeNastQueries: QueryMap = {
-  title: { selectors: ["h2"] },
-  description: { selectors: ["h2 + div"] },
-  link: { selectors: ['a[href^="/recipe/"]'] },
-  rating: { selectors: ['[role="group"][aria-label="Rating"]'] },
-  img: { selectors: ["img.responsive-image__image"] },
-};
-const condeNastSelector = "[class^='search_result_item']";
+interface BaseQuery {
+  source: Source;
+  url: (q: string) => string;
+}
 
-/** All queries created by Claude AI */
-export const queries: Record<
-  Source,
-  { queries: QueryMap; url: (q: string) => string; rootSelector: string }
-> = {
-  nyTimes: {
+export interface HTMLQuery extends BaseQuery {
+  source: "nyTimes" | "seriousEats";
+  /** All queries created by Claude AI */
+  queries: QueryMap;
+  rootSelector: string;
+}
+
+export interface ScriptQuery extends BaseQuery {
+  source: "bonAppetit" | "epicurious";
+  extractor: (root: ParserHTMLElement) => Recipe[];
+}
+
+export type Query = HTMLQuery | ScriptQuery;
+
+export const queries: Query[] = [
+  {
+    source: "nyTimes",
     url: (q) => "https://cooking.nytimes.com/search?q=" + q,
     rootSelector: 'article[class*="card"]',
     queries: {
@@ -94,7 +101,8 @@ export const queries: Record<
       },
     },
   },
-  seriousEats: {
+  {
+    source: "seriousEats",
     url: (q) => "https://www.seriouseats.com/search?q=" + q,
     rootSelector: ".card-list__item",
     queries: {
@@ -109,19 +117,45 @@ export const queries: Record<
         callback: (els) => els[0].getAttribute("href")!,
       },
       img: {
-        selectors: [".card__media img"],
-        callback: (els) => els[0].getAttribute("src")!,
+        selectors: [".card__media img", "img"],
+        callback: (els) => els[0].getAttribute("data-src")!,
       },
     },
   },
-  bonAppetit: {
+  {
+    source: "bonAppetit",
     url: (q) => `https://www.bonappetit.com/search?q=${q}&content=recipe`,
-    rootSelector: condeNastSelector,
-    queries: condeNastQueries,
+    extractor: epicuriousExtractor,
   },
-  epicurious: {
+  {
+    source: "epicurious",
     url: (q) => `https://www.epicurious.com/search?q=${q}&content=recipe`,
-    rootSelector: condeNastSelector,
-    queries: condeNastQueries,
+    extractor: epicuriousExtractor,
   },
-};
+];
+
+function epicuriousExtractor(root: ParserHTMLElement): Recipe[] {
+  const scriptEl = root
+    .querySelectorAll('script[type="text/javascript"]')
+    .filter(
+      (el) =>
+        !el.getAttribute("defer") && el.rawText.includes("__PRELOADED_STATE__")
+    )
+    .pop();
+
+  if (!scriptEl) return [];
+  const str = scriptEl.rawText
+    .replace("window.__PRELOADED_STATE__ = ", "")
+    .replace(/\;/g, "");
+  try {
+    const data = JSON.parse(str);
+    const items: Array<Schema> = data.transformed.search.items;
+    const schema = generateSchema(items);
+    console.log(schema);
+  } catch (error) {
+    console.log(error);
+
+    return [];
+  }
+  return [];
+}

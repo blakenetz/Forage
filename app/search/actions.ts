@@ -1,10 +1,11 @@
 "use server";
 
 import { parse, HTMLElement as ParserHTMLElement } from "node-html-parser";
-import { queries, Recipe, RecipeData, Source } from "./data";
+import { HTMLQuery, Recipe, RecipeData, Source } from "./data";
+import { extractQuery } from "@/util";
 
 function extractRecipe(source: Source, root: ParserHTMLElement): RecipeData {
-  const selectorKeys = queries[source]!.queries;
+  const { queries: selectorKeys } = extractQuery<HTMLQuery>(source);
 
   return Object.keys(selectorKeys).reduce<RecipeData>(
     (acc, key) => {
@@ -55,15 +56,26 @@ function parseRecipeData(data: RecipeData): Recipe {
 }
 
 export async function fetchRecipeData(source: Source, query: string) {
-  const { url, rootSelector } = queries[source];
+  const q = extractQuery(source);
 
-  const res = await fetch(url(query));
+  const res = await fetch(q.url(query));
   const html = await res.text();
 
   const root = parse(html);
-  const recipes = root.querySelectorAll(rootSelector);
 
-  const extract = extractRecipe.bind(null, source);
+  switch (q.source) {
+    case "nyTimes":
+    case "seriousEats":
+      const recipes = root.querySelectorAll(q.rootSelector);
+      const extract = extractRecipe.bind(null, source);
 
-  return recipes.map(extract).map(parseRecipeData);
+      return recipes.map(extract).map(parseRecipeData);
+
+    case "bonAppetit":
+    case "epicurious":
+      return q.extractor(root);
+
+    default:
+      return [];
+  }
 }
