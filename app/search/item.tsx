@@ -29,28 +29,35 @@ type RecipeGridProps = PropsWithChildren<{
   query: string;
 }>;
 
-const info: Record<Source, { icon: React.ReactElement; title: string }> = {
-  nyTimes: {
-    title: "New York Times Cooking",
-    icon: <IconBrandNytimes />,
-  },
-  seriousEats: { title: "Serious Eats", icon: <IconDumpling /> },
-  bonAppetit: { title: "Bon Appetit", icon: <IconSalad /> },
-  epicurious: { title: "Epicurious", icon: <IconGlassFull /> },
-};
+const sourceMap = new Map<Source, { icon: React.ReactElement; title: string }>([
+  [
+    "nyTimes",
+    {
+      title: "New York Times Cooking",
+      icon: <IconBrandNytimes />,
+    },
+  ],
+  ["epicurious", { title: "Epicurious", icon: <IconGlassFull /> }],
+  ["seriousEats", { title: "Serious Eats", icon: <IconDumpling /> }],
+  ["bonAppetit", { title: "Bon Appetit", icon: <IconSalad /> }],
+]);
 
 export default async function RecipeGrid({ source, query }: RecipeGridProps) {
   const data = await fetchRecipeData(source, query);
-  const { title, icon } = info[source];
+  const { title, icon } = sourceMap.get(source)!;
 
   return (
-    <AccordionItem value={source}>
-      <AccordionControl icon={icon}>{title}</AccordionControl>
-      <AccordionPanel>
-        <SimpleGrid cols={5} spacing="xs">
+    <AccordionItem value={source} className={styles.item}>
+      <AccordionControl className={styles.control} icon={icon}>
+        {title}
+      </AccordionControl>
+      <AccordionPanel
+        classNames={{ panel: styles.panel, content: styles.content }}
+      >
+        <SimpleGrid cols={5} spacing="xs" className={styles.grid}>
           {data.map((d) => (
             <Anchor
-              key={d.title}
+              key={d.link}
               href={d.link}
               rel="noopener noreferrer"
               target="__blank"

@@ -1,4 +1,22 @@
-.results {}
+.main {
+  max-height: 100vh;
+}
+
+.accordion,
+.item,
+.panel,
+.content,
+.grid {
+  max-height: inherit;
+}
+
+.item {
+  overflow: scroll;
+}
+
+.title {
+  padding: var(--mantine-spacing-xs);
+}
 
 .card {
   justify-content: space-between;

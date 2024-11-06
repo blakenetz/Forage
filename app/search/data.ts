@@ -4,9 +4,9 @@ import { HTMLElement as ParserHTMLElement } from "node-html-parser";
 
 export const sources = [
   "nyTimes",
-  "seriousEats",
-  "bonAppetit",
   "epicurious",
+  "bonAppetit",
+  "seriousEats",
 ] as const;
 export type Source = (typeof sources)[number];
 
@@ -141,15 +141,18 @@ function epicuriousExtractor(
 ): Recipe[] {
   const baseUrl = `https://${source.toLocaleLowerCase()}.com`;
 
+  const filterPredicate = (el: ParserHTMLElement) =>
+    !el.getAttribute("defer") && el.rawText.includes("__PRELOADED_STATE__");
+
   const scriptEl = root
     .querySelectorAll('script[type="text/javascript"]')
-    .filter(
-      (el) =>
-        !el.getAttribute("defer") && el.rawText.includes("__PRELOADED_STATE__")
-    )
+    .filter(filterPredicate)
     .pop();
 
-  if (!scriptEl) return [];
+  if (!scriptEl) {
+    console.log(`Unable to find script el for ${source}`);
+    return [];
+  }
 
   const str = scriptEl.rawText
     .replace("window.__PRELOADED_STATE__ = ", "")

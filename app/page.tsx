@@ -2,7 +2,7 @@
 
 import { TextInput, Title } from "@mantine/core";
 
-import styles from "./page.module.css";
+import styles from "./home.module.css";
 import { IconSearch } from "@tabler/icons-react";
 
 import { useFormState } from "react-dom";
