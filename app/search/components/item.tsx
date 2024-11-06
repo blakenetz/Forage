@@ -12,7 +12,7 @@ import {
   AccordionControl,
 } from "@mantine/core";
 
-import styles from "./search.module.css";
+import styles from "../search.module.css";
 import Meta from "../meta";
 import {
   IconBrandNytimes,
@@ -31,7 +31,7 @@ type RecipeGridProps = PropsWithChildren<{
 
 const sourceMap = new Map<Source, { icon: React.ReactElement; title: string }>([
   [
-    "nyTimes",
+    "newYorkTimesCooking",
     {
       title: "New York Times Cooking",
       icon: <IconBrandNytimes />,

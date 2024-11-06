@@ -3,7 +3,7 @@ import { PartialRecord } from "@/util";
 import { HTMLElement as ParserHTMLElement } from "node-html-parser";
 
 export const sources = [
-  "nyTimes",
+  "newYorkTimesCooking",
   "epicurious",
   "bonAppetit",
   "seriousEats",
@@ -46,7 +46,7 @@ interface BaseQuery {
 }
 
 export interface HTMLQuery extends BaseQuery {
-  source: "nyTimes" | "seriousEats";
+  source: "newYorkTimesCooking" | "seriousEats";
   /** All queries created by Claude AI */
   queries: QueryMap;
   rootSelector: string;
@@ -61,7 +61,7 @@ export type Query = HTMLQuery | ScriptQuery;
 
 export const queries: Query[] = [
   {
-    source: "nyTimes",
+    source: "newYorkTimesCooking",
     url: (q) => "https://cooking.nytimes.com/search?q=" + q,
     rootSelector: 'article[class*="card"]',
     queries: {

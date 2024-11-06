@@ -4,8 +4,9 @@ import { redirect } from "next/navigation";
 
 import { type NextRequest } from "next/server";
 import styles from "./search.module.css";
-import Item from "./item";
+import Item from "./components/item";
 import { sources } from "./data";
+import Aside from "./components/aside";
 
 export function GET(request: NextRequest) {
   const { searchParams } = request.nextUrl;
@@ -24,7 +25,12 @@ export default async function Search({
   return (
     <main className={styles.main}>
       <Title className={styles.title}>Recipeas!</Title>
-      <Accordion defaultValue="nyTimes" radius={0} className={styles.accordion}>
+      <Aside />
+      <Accordion
+        defaultValue="newYorkTimesCooking"
+        radius={0}
+        className={styles.accordion}
+      >
         {sources.map((source) => (
           <Item key={source} source={source} query={query} />
         ))}

@@ -2,6 +2,12 @@
   max-height: 100vh;
 }
 
+.open {
+  width: auto
+}
+
+.close {}
+
 .accordion,
 .item,
 .panel,

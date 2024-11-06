@@ -64,7 +64,7 @@ export async function fetchRecipeData(source: Source, query: string) {
   const root = parse(html);
 
   switch (q.source) {
-    case "nyTimes":
+    case "newYorkTimesCooking":
     case "seriousEats":
       const recipes = root.querySelectorAll(q.rootSelector);
       const extract = extractRecipe.bind(null, source);
