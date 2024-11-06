@@ -13,16 +13,16 @@ import {
 } from "@mantine/core";
 
 import styles from "./search.module.css";
-import Meta from "./meta";
+import Meta from "../meta";
 import {
   IconBrandNytimes,
   IconDumpling,
   IconGlassFull,
   IconSalad,
 } from "@tabler/icons-react";
-import { fetchRecipeData } from "./actions";
+import { fetchRecipeData } from "../actions";
 import { PropsWithChildren } from "react";
-import { Source } from "./data";
+import { Source } from "../data";
 
 type RecipeGridProps = PropsWithChildren<{
   source: Source;
