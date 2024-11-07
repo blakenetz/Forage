@@ -119,7 +119,7 @@ export const queries: Query[] = [
       author: {
         selectors: [".card__author-name"],
         callback: (els) =>
-          els[0].getAttribute("data-byline-author")!.replace(/by/, "").trim(),
+          els[0].getAttribute("data-byline-author")!.replace(/by/i, "").trim(),
       },
       link: {
         selectors: ["a"],

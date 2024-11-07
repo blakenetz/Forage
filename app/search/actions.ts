@@ -3,6 +3,7 @@
 import { parse, HTMLElement as ParserHTMLElement } from "node-html-parser";
 import { HTMLQuery, Recipe, RecipeData, Source, sources } from "./data";
 import { extractQuery } from "@/util";
+import he from "he";
 
 function extractRecipe(source: Source, root: ParserHTMLElement): RecipeData {
   const { queries: selectorKeys } = extractQuery<HTMLQuery>(source);
@@ -17,7 +18,8 @@ function extractRecipe(source: Source, root: ParserHTMLElement): RecipeData {
 
         const els = root.querySelectorAll(sel);
 
-        if (els.length) return callback ? callback(els) : els[0].rawText;
+        if (els.length)
+          return callback ? callback(els) : he.decode(els[0].rawText);
 
         return "";
       }, "");
