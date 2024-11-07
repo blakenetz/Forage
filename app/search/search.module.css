@@ -1,14 +1,27 @@
 .main {
   max-height: 100dvh;
+  --title-font-size: var(--mantine-h1-font-size);
+  @media (max-width: $mantine-breakpoint-xs) {
+    --title-font-size: var(--mantine-h3-font-size);
+  }
 }
 
 .title {
   padding: var(--mantine-spacing-xs);
+  font-size: var(--title-font-size);
 }
 
 .aside {
   position: fixed;
-  height: calc(100dvh - calc(calc((var(--mantine-spacing-xs) * 2) + calc(var(--mantine-h1-font-size) * var(--mantine-h1-line-height)))));
+  height: calc(
+    100dvh -
+      calc(
+        calc(
+          (var(--mantine-spacing-xs) * 2) +
+            calc(var(--title-font-size) * var(--mantine-h1-line-height))
+        )
+      )
+  );
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -18,7 +31,9 @@
 }
 
 .grid {
-  padding-inline-start: calc(var(--search-navbar-width) + var(--mantine-spacing-sm));
+  padding-inline-start: calc(
+    var(--search-navbar-width) + var(--mantine-spacing-sm)
+  );
   padding-inline-end: var(--mantine-spacing-sm);
   padding-bottom: var(--mantine-spacing-sm);
   min-height: 100dvh;
@@ -35,7 +50,7 @@
 
 .imageWrapper {
   position: relative;
-  height: 160px
+  height: 160px;
 }
 
 .image {
@@ -44,5 +59,5 @@
 
 .small {
   display: flex;
-  gap: calc(var(--mantine-spacing-xs)/2)
+  gap: calc(var(--mantine-spacing-xs) / 2);
 }

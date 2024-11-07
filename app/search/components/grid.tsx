@@ -8,6 +8,7 @@ import {
   CardSection,
   InlineStyles,
   SimpleGrid,
+  SimpleGridProps,
   Text,
   Title,
   Tooltip,
@@ -21,6 +22,7 @@ import {
   IconLayoutSidebarLeftCollapse,
   IconLayoutSidebarLeftExpand,
   IconSalad,
+  IconToolsKitchen2,
 } from "@tabler/icons-react";
 import { startCase } from "lodash";
 import NextImage from "next/image";
@@ -53,13 +55,23 @@ export default function RecipeGrid({ data }: RecipeGridProps) {
 
   const inlineStyles: CSSVariable = {
     "--search-navbar-width": open
-      ? "calc((var(--mantine-spacing-sm) * 2) + 240px)"
+      ? "calc((var(--mantine-spacing-sm) * 2) + 210px)"
       : "calc((var(--mantine-spacing-sm) * 2) + 36px)",
   };
+
+  const cols: SimpleGridProps["cols"] = { base: 2, xs: 3, sm: 4, md: 4, lg: 5 };
+  if (open) {
+    cols.base = 1;
+    cols.xs = 2;
+    cols.sm = 3;
+  }
 
   return (
     <>
       <InlineStyles selector={ctx.cssVariablesSelector} styles={inlineStyles} />
+      <Title className={styles.title} lineClamp={1}>
+        <IconToolsKitchen2 /> {startCase(selected)}
+      </Title>
       <aside className={styles.aside}>
         <div>
           {sources.map((source) => {
@@ -98,7 +110,7 @@ export default function RecipeGrid({ data }: RecipeGridProps) {
         </ActionIcon>
       </aside>
 
-      <SimpleGrid cols={5} spacing="xs" className={styles.grid}>
+      <SimpleGrid cols={cols} spacing="xs" className={styles.grid}>
         {recipes.map((d) => (
           <Anchor
             key={d.link}

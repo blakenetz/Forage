@@ -1,5 +1,4 @@
 import { param } from "@/util";
-import { Title } from "@mantine/core";
 import { redirect } from "next/navigation";
 
 import { type NextRequest } from "next/server";
@@ -25,7 +24,6 @@ export default async function Search({
 
   return (
     <main className={styles.main}>
-      <Title className={styles.title}>Recipeas!</Title>
       <Grid data={data} />
     </main>
   );
