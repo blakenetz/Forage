@@ -108,7 +108,9 @@ export default function RecipeGrid({ data }: RecipeGridProps) {
                 />
               </CardSection>
 
-              <Title order={3}>{d.title}</Title>
+              <Title order={4} className={styles.cardTitle}>
+                {d.title}
+              </Title>
               {d.description && <Text>{d.description}</Text>}
               <Meta {...d.meta} />
             </Card>
