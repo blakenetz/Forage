@@ -1,6 +1,6 @@
 "use client";
 
-import { ActionIcon } from "@mantine/core";
+import { ActionIcon, Button } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import {
   IconLayoutSidebarLeftCollapse,
@@ -14,6 +14,8 @@ import {
   IconGlassFull,
   IconSalad,
 } from "@tabler/icons-react";
+import clsx from "clsx";
+import { startCase } from "lodash";
 
 export const sourceMap = new Map<Source, React.ReactElement>([
   ["newYorkTimesCooking", <IconBrandNytimes key="newYorkTimesCooking" />],
@@ -23,20 +25,29 @@ export const sourceMap = new Map<Source, React.ReactElement>([
 ]);
 
 export default function Aside() {
-  const [open, { toggle }] = useDisclosure(true);
+  const [open, { toggle }] = useDisclosure();
 
   return (
-    <aside className={open ? styles.open : styles.close}>
-      <ActionIcon onClick={toggle}>
+    <aside className={clsx(styles.aside, open ? styles.open : styles.close)}>
+      <ActionIcon onClick={toggle} size="lg">
         {open ? (
           <IconLayoutSidebarLeftExpand />
         ) : (
           <IconLayoutSidebarLeftCollapse />
         )}
       </ActionIcon>
-      {sources.map((source) => (
-        <ActionIcon key={source}>{sourceMap.get(source)}</ActionIcon>
-      ))}
+      {sources.map((source) => {
+        const icon = sourceMap.get(source);
+        return open ? (
+          <Button key={source} fullWidth leftSection={icon}>
+            {startCase(source)}
+          </Button>
+        ) : (
+          <ActionIcon key={source} size="lg">
+            {icon}
+          </ActionIcon>
+        );
+      })}
     </aside>
   );
 }
