@@ -1,7 +1,7 @@
 "use server";
 
 import { parse, HTMLElement as ParserHTMLElement } from "node-html-parser";
-import { HTMLQuery, Recipe, RecipeData, Source } from "./data";
+import { HTMLQuery, Recipe, RecipeData, Source, sources } from "./data";
 import { extractQuery } from "@/util";
 
 function extractRecipe(source: Source, root: ParserHTMLElement): RecipeData {
@@ -55,7 +55,7 @@ function parseRecipeData(data: RecipeData): Recipe {
   };
 }
 
-export async function fetchRecipeData(source: Source, query: string) {
+async function fetchRecipeDataBySource(source: Source, query: string) {
   const q = extractQuery(source);
 
   const res = await fetch(q.url(query));
@@ -67,16 +67,30 @@ export async function fetchRecipeData(source: Source, query: string) {
     case "newYorkTimesCooking":
     case "seriousEats":
       const recipes = root.querySelectorAll(q.rootSelector);
-      const extract = extractRecipe.bind(null, source);
+      const extractor = extractRecipe.bind(null, source);
 
-      return recipes.map(extract).map(parseRecipeData);
+      return recipes.map(extractor).map(parseRecipeData);
 
     case "bonAppetit":
     case "epicurious":
-      const __extractor = q.extractor.bind(null, source);
-      return __extractor(root);
+      const extractFn = q.extractor.bind(null, source);
+      return extractFn(root);
 
     default:
       return [];
   }
+}
+
+export async function fetchRecipeData(
+  query: string
+): Promise<Record<Source, Recipe[]>> {
+  const data = await Promise.all(
+    sources.map((source) => fetchRecipeDataBySource(source, query))
+  );
+
+  return data.reduce((acc, sourceData, i) => {
+    const source = sources[i];
+    acc[source] = sourceData;
+    return acc;
+  }, {} as Record<Source, Recipe[]>);
 }

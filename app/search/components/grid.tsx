@@ -1,32 +1,90 @@
-import NextImage from "next/image";
+"use client";
 
 import {
+  ActionIcon,
+  Anchor,
+  Button,
   Card,
   CardSection,
+  InlineStyles,
+  SimpleGrid,
   Text,
   Title,
-  Anchor,
-  SimpleGrid,
+  useMantineContext,
 } from "@mantine/core";
+import { useDisclosure } from "@mantine/hooks";
+import {
+  IconBrandNytimes,
+  IconDumpling,
+  IconGlassFull,
+  IconLayoutSidebarLeftCollapse,
+  IconLayoutSidebarLeftExpand,
+  IconSalad,
+} from "@tabler/icons-react";
+import { startCase } from "lodash";
+import NextImage from "next/image";
+import { PropsWithChildren, useState } from "react";
 
-import styles from "../search.module.css";
+import { Recipe, Source, sources } from "../data";
 import Meta from "../meta";
-import { fetchRecipeData } from "../actions";
-import { PropsWithChildren } from "react";
-import { Source } from "../data";
+import styles from "../search.module.css";
+
+export const sourceMap = new Map<Source, React.ReactElement>([
+  ["newYorkTimesCooking", <IconBrandNytimes key="newYorkTimesCooking" />],
+  ["epicurious", <IconGlassFull key="epicurious" />],
+  ["seriousEats", <IconDumpling key="seriousEats" />],
+  ["bonAppetit", <IconSalad key="bonAppetit" />],
+]);
 
 type RecipeGridProps = PropsWithChildren<{
-  source: Source;
-  query: string;
+  data: Record<Source, Recipe[]>;
 }>;
 
-export default function RecipeGrid({ source, query }: RecipeGridProps) {
-  const data = fetchRecipeData(source, query).then((d) => d);
+type CSSVariable = Record<`--${string}`, string | undefined> &
+  React.CSSProperties;
+
+export default function RecipeGrid({ data }: RecipeGridProps) {
+  const [selected, setSelected] = useState<Source>(sources[0]);
+  const [open, { toggle }] = useDisclosure();
+  const ctx = useMantineContext();
+
+  const recipes = data[selected];
+
+  const inlineStyles: CSSVariable = {
+    "--search-navbar-width": open
+      ? "calc((var(--mantine-spacing-sm) * 2) + 240px)"
+      : "calc((var(--mantine-spacing-sm) * 2) + 36px)",
+  };
 
   return (
-    <SimpleGrid cols={5} spacing="xs" className={styles.grid}>
-      {Array.isArray(data) &&
-        data.map((d) => (
+    <>
+      <InlineStyles selector={ctx.cssVariablesSelector} styles={inlineStyles} />
+      <aside className={styles.aside}>
+        <div>
+          {sources.map((source) => (
+            <Button
+              variant={selected === source ? "filled" : "subtle"}
+              key={source}
+              fullWidth
+              leftSection={sourceMap.get(source)}
+              onClick={() => setSelected(source)}
+              justify="flex-start"
+            >
+              {startCase(source)}
+            </Button>
+          ))}
+        </div>
+        <ActionIcon onClick={toggle} size="lg" color="blue.9" m="sm">
+          {open ? (
+            <IconLayoutSidebarLeftExpand />
+          ) : (
+            <IconLayoutSidebarLeftCollapse />
+          )}
+        </ActionIcon>
+      </aside>
+
+      <SimpleGrid cols={5} spacing="xs" className={styles.grid}>
+        {recipes.map((d) => (
           <Anchor
             key={d.link}
             href={d.link}
@@ -56,6 +114,7 @@ export default function RecipeGrid({ source, query }: RecipeGridProps) {
             </Card>
           </Anchor>
         ))}
-    </SimpleGrid>
+      </SimpleGrid>
+    </>
   );
 }
