@@ -26,7 +26,7 @@ import NextImage from "next/image";
 import { PropsWithChildren, useState } from "react";
 
 import { Recipe, Source, sources } from "../data";
-import Meta from "../meta";
+import Meta from "./meta";
 import styles from "../search.module.css";
 
 export const sourceMap = new Map<Source, React.ReactElement>([
