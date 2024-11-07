@@ -1,4 +1,9 @@
-import { IconStarFilled, IconStar, IconClock } from "@tabler/icons-react";
+import {
+  IconStarFilled,
+  IconStar,
+  IconClock,
+  IconTagStarred,
+} from "@tabler/icons-react";
 import { Stack, Group, Text } from "@mantine/core";
 import styles from "../search.module.css";
 import { Recipe } from "../data";
@@ -6,7 +11,7 @@ import { Recipe } from "../data";
 export default function Meta(props: Recipe["meta"]) {
   if (!props) return null;
 
-  const { rating, ratingCount, time } = props;
+  const { rating, ratingCount, time, tags } = props;
 
   return (
     <Stack mt="md" gap={5}>
@@ -28,10 +33,15 @@ export default function Meta(props: Recipe["meta"]) {
       )}
 
       {time && (
-        <Group className={styles.time}>
-          <IconClock size="1rem" />
-          <Text size="xs">{time}</Text>
-        </Group>
+        <Text size="xs" className={styles.small}>
+          <IconClock size="1rem" /> {time}
+        </Text>
+      )}
+
+      {tags && (
+        <Text size="xs" className={styles.small}>
+          <IconTagStarred size="1rem" /> {tags}
+        </Text>
       )}
     </Stack>
   );

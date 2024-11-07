@@ -1,6 +1,8 @@
 import { EpicuriousRecipe } from "@/types";
 import { PartialRecord } from "@/util";
+import { capitalize } from "lodash";
 import { HTMLElement as ParserHTMLElement } from "node-html-parser";
+import he from "he";
 
 export const sources = [
   "newYorkTimesCooking",
@@ -19,14 +21,17 @@ export type RecipeData = {
   time?: string;
   rating?: string;
   ratingCount?: string;
+  tags?: string;
 };
 
 export type Recipe = Pick<RecipeData, "title" | "img" | "link"> & {
   description?: string;
+  author?: string;
   meta: {
     rating?: number;
     ratingCount?: number;
     time?: string;
+    tags?: string;
   };
 };
 
@@ -63,9 +68,9 @@ export const queries: Query[] = [
   {
     source: "newYorkTimesCooking",
     url: (q) => "https://cooking.nytimes.com/search?q=" + q,
-    rootSelector: 'article[class*="card"]',
+    rootSelector: 'li > [class*="recipecard"]',
     queries: {
-      title: { selectors: ['h3[class^="pantry--ui-strong"]', "a h3"] },
+      title: { selectors: ['h3[class^="pantry--ui-strong"]', "article a h3"] },
       author: {
         selectors: [
           'p[class^="pantry--ui-sm recipecard_byline"]',
@@ -73,12 +78,12 @@ export const queries: Query[] = [
         ],
       },
       link: {
-        selectors: ['a[class^="link"]', "a"],
+        selectors: ['a[class^="link"]', "article a"],
         callback: (els) =>
           `https://cooking.nytimes.com${els[0].getAttribute("href")}`,
       },
       img: {
-        selectors: ['img[class^="cardimage_image"]', "a figure img"],
+        selectors: ['img[class^="cardimage_image"]', "article a figure img"],
         callback: (els) => els[0].getAttribute("src")!,
       },
       time: {
@@ -99,6 +104,9 @@ export const queries: Query[] = [
           'div[class^="recipecard_recipeCardRating"] p[class^="pantry--ui-xs"]',
           'a section div[class*="rating"] p',
         ],
+      },
+      tags: {
+        selectors: ['a[class^="kickerlabel"]', 'a[href*="tag"]'],
       },
     },
   },
@@ -161,15 +169,23 @@ function epicuriousExtractor(
   try {
     const data = JSON.parse(str);
     const items: EpicuriousRecipe[] = data.transformed.search.items;
-    return items.map((item) => ({
-      title: item.dangerousHed,
-      img: item.image.sources.md.url,
-      link: new URL(item.url, baseUrl).toString(),
-      meta: {
-        rating: item.rating,
-        ratingCount: item.reviewsCount,
-      },
-    }));
+
+    return items.map((item) => {
+      return {
+        title: he.decode(item.dangerousHed),
+        description: he.decode(item.dangerousDek),
+        author: item.contributors.author?.items
+          .map((item) => item.name)
+          .join(", "),
+        img: item.image.sources.md.url,
+        link: new URL(item.url, baseUrl).toString(),
+        meta: {
+          rating: item.rating,
+          ratingCount: item.reviewsCount,
+          tags: item.imageLabels.map(capitalize).join(", "),
+        },
+      };
+    });
   } catch (error) {
     console.log(error);
 

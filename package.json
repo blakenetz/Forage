@@ -13,6 +13,7 @@
     "@mantine/hooks": "^7.13.0",
     "@tabler/icons-react": "^3.19.0",
     "clsx": "^2.1.1",
+    "he": "^1.2.0",
     "lodash": "^4.17.21",
     "next": "14.2.13",
     "node-html-parser": "^6.1.13",
@@ -20,6 +21,7 @@
     "react-dom": "^18"
   },
   "devDependencies": {
+    "@types/he": "^1.2.3",
     "@types/lodash": "^4.17.13",
     "@types/node": "^20",
     "@types/react": "^18",

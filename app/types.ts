@@ -12,6 +12,7 @@ export type EpicuriousRecipe = {
       { aspectRatio: string; url: string }
     >;
   };
+  imageLabels: string[];
   contributors: {
     author: {
       items: {

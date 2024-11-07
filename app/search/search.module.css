@@ -20,6 +20,7 @@
 .grid {
   padding-inline-start: calc(var(--search-navbar-width) + var(--mantine-spacing-sm));
   padding-inline-end: var(--mantine-spacing-sm);
+  padding-bottom: var(--mantine-spacing-sm);
   min-height: 100dvh;
   transition: padding 200ms ease;
 }
@@ -41,6 +42,7 @@
   object-fit: cover;
 }
 
-.time {
+.small {
+  display: flex;
   gap: calc(var(--mantine-spacing-xs)/2)
 }

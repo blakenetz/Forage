@@ -46,11 +46,13 @@ function parseRecipeData(data: RecipeData): Recipe {
     title: data.title,
     img: data.img,
     link: data.link,
-    description: data.description ?? data.author,
+    description: data.description,
+    author: data.author,
     meta: {
       rating: parseNumber(data.rating),
       ratingCount: parseNumber(data.ratingCount),
       time: data.time,
+      tags: data.tags,
     },
   };
 }

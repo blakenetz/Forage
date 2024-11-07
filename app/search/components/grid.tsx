@@ -44,7 +44,7 @@ type CSSVariable = Record<`--${string}`, string | undefined> &
   React.CSSProperties;
 
 export default function RecipeGrid({ data }: RecipeGridProps) {
-  const [selected, setSelected] = useState<Source>(sources[0]);
+  const [selected, setSelected] = useState<Source>(sources[1]);
   const [open, { toggle }] = useDisclosure();
   const ctx = useMantineContext();
 
@@ -76,9 +76,9 @@ export default function RecipeGrid({ data }: RecipeGridProps) {
         </div>
         <ActionIcon onClick={toggle} size="lg" color="blue.9" m="sm">
           {open ? (
-            <IconLayoutSidebarLeftExpand />
-          ) : (
             <IconLayoutSidebarLeftCollapse />
+          ) : (
+            <IconLayoutSidebarLeftExpand />
           )}
         </ActionIcon>
       </aside>
@@ -111,7 +111,12 @@ export default function RecipeGrid({ data }: RecipeGridProps) {
               <Title order={4} className={styles.cardTitle}>
                 {d.title}
               </Title>
-              {d.description && <Text>{d.description}</Text>}
+              {d.author && <Text size="sm">{d.author}</Text>}
+              {d.description && (
+                <Text size="sm" c="dimmed" lineClamp={4}>
+                  {d.description}
+                </Text>
+              )}
               <Meta {...d.meta} />
             </Card>
           </Anchor>
