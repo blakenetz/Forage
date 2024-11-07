@@ -10,6 +10,7 @@ import {
   SimpleGrid,
   Text,
   Title,
+  Tooltip,
   useMantineContext,
 } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
@@ -44,7 +45,7 @@ type CSSVariable = Record<`--${string}`, string | undefined> &
   React.CSSProperties;
 
 export default function RecipeGrid({ data }: RecipeGridProps) {
-  const [selected, setSelected] = useState<Source>(sources[1]);
+  const [selected, setSelected] = useState<Source>(sources[0]);
   const [open, { toggle }] = useDisclosure();
   const ctx = useMantineContext();
 
@@ -61,18 +62,32 @@ export default function RecipeGrid({ data }: RecipeGridProps) {
       <InlineStyles selector={ctx.cssVariablesSelector} styles={inlineStyles} />
       <aside className={styles.aside}>
         <div>
-          {sources.map((source) => (
-            <Button
-              variant={selected === source ? "filled" : "subtle"}
-              key={source}
-              fullWidth
-              leftSection={sourceMap.get(source)}
-              onClick={() => setSelected(source)}
-              justify="flex-start"
-            >
-              {startCase(source)}
-            </Button>
-          ))}
+          {sources.map((source) => {
+            const button = (
+              <Button
+                variant={selected === source ? "filled" : "subtle"}
+                key={source}
+                fullWidth
+                leftSection={sourceMap.get(source)}
+                onClick={() => setSelected(source)}
+                justify="flex-start"
+              >
+                {startCase(source)}
+              </Button>
+            );
+
+            return open ? (
+              button
+            ) : (
+              <Tooltip
+                key={source}
+                label={startCase(source)}
+                events={{ hover: true, focus: true, touch: false }}
+              >
+                {button}
+              </Tooltip>
+            );
+          })}
         </div>
         <ActionIcon onClick={toggle} size="lg" color="blue.9" m="sm">
           {open ? (
