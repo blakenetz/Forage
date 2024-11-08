@@ -31,6 +31,7 @@ import { PropsWithChildren, useState } from "react";
 import { Recipe, Source, sources } from "../data";
 import Meta from "./meta";
 import styles from "../search.module.css";
+import Header from "./header";
 
 export const sourceMap = new Map<Source, React.ReactElement>([
   ["newYorkTimesCooking", <IconBrandNytimes key="newYorkTimesCooking" />],
@@ -69,9 +70,7 @@ export default function RecipeGrid({ data }: RecipeGridProps) {
   return (
     <>
       <InlineStyles selector={ctx.cssVariablesSelector} styles={inlineStyles} />
-      <Title className={styles.title} lineClamp={1}>
-        <IconToolsKitchen2 /> {startCase(selected)}
-      </Title>
+      <Header selected={selected} />
       <aside className={styles.aside}>
         <div>
           {sources.map((source) => {

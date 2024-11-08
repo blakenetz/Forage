@@ -6,6 +6,7 @@ import styles from "./search.module.css";
 
 import { fetchRecipeData } from "./actions";
 import Grid from "./components/grid";
+import Header from "./components/header";
 
 export function GET(request: NextRequest) {
   const { searchParams } = request.nextUrl;
@@ -22,9 +23,5 @@ export default async function Search({
   const query = searchParams[param];
   const data = await fetchRecipeData(query);
 
-  return (
-    <main className={styles.main}>
-      <Grid data={data} />
-    </main>
-  );
+  return <Grid data={data} />;
 }

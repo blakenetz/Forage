@@ -5,7 +5,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Recipeas",
+  title: "Forage",
   description: "All in one search for recipes",
 };
 

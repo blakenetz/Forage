@@ -1,8 +1,8 @@
-# Recipeas
+# Forage
 
-Better name to come
+Forage for your next meal!
 
-Search [New York Times Cooking](https://cooking.nytimes.com/), [bon appetit](https://www.bonappetit.com/), [epicurious](https://www.epicurious.com/) and [serious eats](https://www.seriouseats.com/) in parallel
+Search [New York Times Cooking](https://cooking.nytimes.com/), [bon appetit](https://www.bonappetit.com/), [epicurious](https://www.epicurious.com/) and [serious eats](https://www.seriouseats.com/) in parallel.
 
 ## Tech stack
 

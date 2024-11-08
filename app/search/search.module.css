@@ -1,14 +1,22 @@
 .main {
   max-height: 100dvh;
-  --title-font-size: var(--mantine-h1-font-size);
+  --title-font-size: var(--mantine-h4-font-size);
   @media (max-width: $mantine-breakpoint-xs) {
     --title-font-size: var(--mantine-h3-font-size);
   }
 }
 
 .title {
+  display: flex;
+  align-items: center;
+  gap: var(--mantine-spacing-xs);
   padding: var(--mantine-spacing-xs);
   font-size: var(--title-font-size);
+
+  svg {
+    width: var(--title-font-size);
+    height: var(--title-font-size);
+  }
 }
 
 .aside {
@@ -18,7 +26,7 @@
       calc(
         calc(
           (var(--mantine-spacing-xs) * 2) +
-            calc(var(--title-font-size) * var(--mantine-h1-line-height))
+            calc(var(--title-font-size) * var(--mantine-h4-line-height))
         )
       )
   );
