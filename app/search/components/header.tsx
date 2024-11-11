@@ -5,6 +5,7 @@ import { startCase } from "lodash";
 import React from "react";
 import styles from "../search.module.css";
 import { Source } from "../data";
+import SearchControl from "./searchControl";
 
 export default function Header({ selected }: { selected?: Source }) {
   const selectedText = selected ? (
@@ -19,11 +20,14 @@ export default function Header({ selected }: { selected?: Source }) {
   );
 
   return (
-    <Title className={styles.title} lineClamp={1} component="h1">
-      <Link href="/" className={styles.titleLink}>
-        <IconToolsKitchen2 /> Foraging
-      </Link>
-      {selectedText}
-    </Title>
+    <header className={styles.header}>
+      <Title className={styles.title} lineClamp={1} component="h1">
+        <Link href="/" className={styles.titleLink}>
+          <IconToolsKitchen2 /> Foraging
+        </Link>
+        {selectedText}
+      </Title>
+      {selected && <SearchControl />}
+    </header>
   );
 }

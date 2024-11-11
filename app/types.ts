@@ -24,3 +24,6 @@ export type EpicuriousRecipe = {
     };
   };
 };
+
+export type CSSVariable = Record<`--${string}`, string | undefined> &
+  React.CSSProperties;

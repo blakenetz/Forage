@@ -31,13 +31,11 @@ import styles from "../search.module.css";
 import Header from "./header";
 import Aside from "./aside";
 import Grid, { defaultGridProps } from "./grid";
+import { CSSVariable } from "@/types";
 
 type RecipeGridProps = PropsWithChildren<{
   data: Record<Source, Recipe[]>;
 }>;
-
-type CSSVariable = Record<`--${string}`, string | undefined> &
-  React.CSSProperties;
 
 const sourceMap = new Map<Source, React.ReactElement>([
   ["newYorkTimesCooking", <IconBrandNytimes key="newYorkTimesCooking" />],
