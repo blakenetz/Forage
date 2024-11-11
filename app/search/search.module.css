@@ -4,6 +4,7 @@
   @media (max-width: $mantine-breakpoint-xs) {
     --title-font-size: var(--mantine-h3-font-size);
   }
+  --search-navbar-width: calc((var(--mantine-spacing-sm) * 2) + 36px);
 }
 
 .title {

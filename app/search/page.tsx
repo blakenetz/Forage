@@ -2,11 +2,10 @@ import { param } from "@/util";
 import { redirect } from "next/navigation";
 
 import { type NextRequest } from "next/server";
-import styles from "./search.module.css";
 
 import { fetchRecipeData } from "./actions";
-import Grid from "./components/grid";
-import Header from "./components/header";
+import View from "./components/view";
+import Loading from "./loading";
 
 export function GET(request: NextRequest) {
   const { searchParams } = request.nextUrl;
@@ -23,5 +22,6 @@ export default async function Search({
   const query = searchParams[param];
   const data = await fetchRecipeData(query);
 
-  return <Grid data={data} />;
+  return <Loading />;
+  // return <View data={data} />;
 }
