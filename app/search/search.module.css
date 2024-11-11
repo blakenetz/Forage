@@ -10,7 +10,6 @@
 .title {
   display: flex;
   align-items: center;
-  gap: var(--mantine-spacing-xs);
   padding: var(--mantine-spacing-xs);
   font-size: var(--title-font-size);
 
@@ -18,6 +17,10 @@
     width: var(--title-font-size);
     height: var(--title-font-size);
   }
+}
+
+.titleLink {
+  color: var(--mantine-color-text);
 }
 
 .aside {

@@ -5,7 +5,6 @@ import { type NextRequest } from "next/server";
 
 import { fetchRecipeData } from "./actions";
 import View from "./components/view";
-import Loading from "./loading";
 
 export function GET(request: NextRequest) {
   const { searchParams } = request.nextUrl;
@@ -22,6 +21,5 @@ export default async function Search({
   const query = searchParams[param];
   const data = await fetchRecipeData(query);
 
-  return <Loading />;
-  // return <View data={data} />;
+  return <View data={data} />;
 }

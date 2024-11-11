@@ -1,12 +1,10 @@
-import { InlineStyles, Skeleton, useMantineContext } from "@mantine/core";
+import { Skeleton } from "@mantine/core";
 import Aside from "./components/aside";
 import Grid from "./components/grid";
 import Header from "./components/header";
 import { sources } from "./data";
 
 export default function Loading() {
-  const ctx = useMantineContext();
-
   return (
     <>
       <Header />
