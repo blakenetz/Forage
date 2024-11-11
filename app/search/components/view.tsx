@@ -8,11 +8,9 @@ import {
   CardSection,
   InlineStyles,
   MantineBreakpoint,
-  SimpleGridProps,
   Text,
   Title,
   Tooltip,
-  useMantineContext,
 } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import {
@@ -51,7 +49,6 @@ const sourceMap = new Map<Source, React.ReactElement>([
 export default function RecipeGrid({ data }: RecipeGridProps) {
   const [selected, setSelected] = useState<Source>(sources[0]);
   const [open, { toggle }] = useDisclosure();
-  const ctx = useMantineContext();
 
   const recipes = data[selected];
 
@@ -69,7 +66,7 @@ export default function RecipeGrid({ data }: RecipeGridProps) {
 
   return (
     <>
-      <InlineStyles selector={ctx.cssVariablesSelector} styles={inlineStyles} />
+      <InlineStyles selector={`.${styles.main}`} styles={inlineStyles} />
       <Header selected={selected} />
       <Aside
         buttons={sources.map((source) => {
