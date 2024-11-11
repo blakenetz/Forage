@@ -18,7 +18,8 @@
     "next": "14.2.13",
     "node-html-parser": "^6.1.13",
     "react": "^18",
-    "react-dom": "^18"
+    "react-dom": "^18",
+    "react-transition-group": "^4.4.5"
   },
   "devDependencies": {
     "@types/he": "^1.2.3",
@@ -26,6 +27,7 @@
     "@types/node": "^20",
     "@types/react": "^18",
     "@types/react-dom": "^18",
+    "@types/react-transition-group": "^4.4.11",
     "eslint": "^8",
     "eslint-config-next": "14.2.13",
     "postcss": "^8.4.47",

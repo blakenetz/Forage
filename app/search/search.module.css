@@ -34,11 +34,9 @@
 .searchWrapper {
   overflow: hidden;
 }
-
-.searchInput {
-  --search-translate: 100%;
-  transform: translateX(var(--search-translate));
-  transition: transform 500ms;
+.searchWrapperActive {
+  border-right: 1px solid var(--mantine-color-gray-4);
+  border-radius: var(--mantine-radius-default);
 }
 
 .aside {
