@@ -6,6 +6,9 @@
   }
   --title-height: calc(var(--title-font-size) * var(--mantine-h4-line-height));
   --search-navbar-width: calc((var(--mantine-spacing-sm) * 2) + 36px);
+  --body-height: calc(
+    100dvh - calc(calc(var(--mantine-spacing-xs) * 2) + var(--title-height))
+  );
 }
 
 .header {
@@ -41,9 +44,7 @@
 
 .aside {
   position: fixed;
-  height: calc(
-    100dvh - calc(calc(var(--mantine-spacing-xs) * 2) + var(--title-height))
-  );
+  height: var(--body-height);
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -58,7 +59,7 @@
   );
   padding-inline-end: var(--mantine-spacing-sm);
   padding-bottom: var(--mantine-spacing-sm);
-  min-height: 100dvh;
+  min-height: var(--body-height);
   transition: padding 200ms ease;
 }
 

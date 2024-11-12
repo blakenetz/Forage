@@ -1,6 +1,6 @@
-import { SimpleGrid, SimpleGridProps } from "@mantine/core";
+import { Center, SimpleGrid, SimpleGridProps, Text } from "@mantine/core";
 import styles from "../search.module.css";
-import { PropsWithChildren } from "react";
+import React from "react";
 
 export const defaultGridProps: SimpleGridProps = {
   cols: {
@@ -14,8 +14,17 @@ export const defaultGridProps: SimpleGridProps = {
   className: styles.grid,
 };
 
-export default function Grid(
-  props: PropsWithChildren<Partial<SimpleGridProps>>
-) {
-  return <SimpleGrid {...defaultGridProps} {...props} />;
+export default function Grid({
+  children,
+  ...props
+}: React.PropsWithChildren<Partial<SimpleGridProps>>) {
+  return !React.Children.count(children) ? (
+    <Center className={defaultGridProps.className}>
+      <Text>No results 🤤</Text>
+    </Center>
+  ) : (
+    <SimpleGrid {...defaultGridProps} {...props}>
+      {children}
+    </SimpleGrid>
+  );
 }

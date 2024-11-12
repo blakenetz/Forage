@@ -4,7 +4,7 @@ import { useDisclosure } from "@mantine/hooks";
 import { IconSearch } from "@tabler/icons-react";
 import styles from "../search.module.css";
 import { Transition, TransitionStatus } from "react-transition-group";
-import { CSSProperties } from "react";
+import { CSSProperties, useRef } from "react";
 import clsx from "clsx";
 import Search from "@/components/search";
 
@@ -20,15 +20,24 @@ const transitionStyles: Partial<Record<TransitionStatus, CSSProperties>> = {
 };
 
 export default function SearchControl() {
-  const [open, { toggle }] = useDisclosure(false);
+  const ref = useRef<HTMLInputElement>(null);
+  const [visible, { open, close }] = useDisclosure(false);
+
+  const handleClick = () => {
+    if (!visible) {
+      open();
+      setTimeout(() => ref.current?.focus(), 600);
+    }
+  };
 
   return (
-    <Transition in={open} timeout={500}>
+    <Transition in={visible} timeout={500}>
       {(state) => {
         const isActive = state === "entering" || state === "exiting";
 
         return (
           <Search
+            ref={ref}
             classNames={{
               wrapper: clsx(
                 styles.searchWrapper,
@@ -39,11 +48,14 @@ export default function SearchControl() {
               input: { ...defaultStyle, ...transitionStyles[state] },
             }}
             rightSection={
-              <ActionIcon variant="subtle" onClick={toggle}>
+              <ActionIcon variant="subtle" onClick={handleClick} size="sm">
                 <IconSearch />
               </ActionIcon>
             }
             leftSection={null}
+            size="sm"
+            radius="sm"
+            onBlur={close}
           />
         );
       }}
