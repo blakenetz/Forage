@@ -1,3 +1,4 @@
+import { TextInputProps } from "@mantine/core";
 import { queries, Query, Source } from "./search/data";
 
 export type PartialRecord<K extends string, T> = {
@@ -17,6 +18,12 @@ export function getQuery(formData: FormData) {
 export function extractQuery<Q extends Query>(source: Source) {
   return queries.find((q) => q.source === source)! as Q;
 }
+
+export const searchProps: TextInputProps = {
+  name: "q",
+  "aria-label": "Search for a recipe",
+  placeholder: "Find a recipe",
+};
 
 export type Schema<V = unknown> = Record<string, V>;
 

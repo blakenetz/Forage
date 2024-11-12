@@ -1,12 +1,15 @@
 "use client";
-import { ActionIcon } from "@mantine/core";
+
+import { search } from "@/actions";
+import { searchProps } from "@/util";
+import { ActionIcon, Loader, TextInput } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import { IconSearch } from "@tabler/icons-react";
-import styles from "../search.module.css";
-import { Transition, TransitionStatus } from "react-transition-group";
-import { CSSProperties, useRef } from "react";
 import clsx from "clsx";
-import Search from "@/components/search";
+import { CSSProperties, useRef } from "react";
+import { useFormState, useFormStatus } from "react-dom";
+import { Transition, TransitionStatus } from "react-transition-group";
+import styles from "../search.module.css";
 
 const defaultStyle: CSSProperties = {
   transform: "translateX(100%)",
@@ -19,9 +22,11 @@ const transitionStyles: Partial<Record<TransitionStatus, CSSProperties>> = {
   entered: enterStyles,
 };
 
-export default function SearchControl() {
+function Input() {
   const ref = useRef<HTMLInputElement>(null);
+
   const [visible, { open, close }] = useDisclosure(false);
+  const { pending } = useFormStatus();
 
   const handleClick = () => {
     if (!visible) {
@@ -34,31 +39,41 @@ export default function SearchControl() {
     <Transition in={visible} timeout={500}>
       {(state) => {
         const isActive = state === "entering" || state === "exiting";
+        const inputStyles = { ...defaultStyle, ...transitionStyles[state] };
 
         return (
-          <Search
+          <TextInput
             ref={ref}
+            {...searchProps}
+            size="sm"
+            radius="sm"
+            onBlur={close}
+            disabled={pending}
+            styles={{ input: inputStyles }}
             classNames={{
               wrapper: clsx(
                 styles.searchWrapper,
                 isActive && styles.searchWrapperActive
               ),
             }}
-            styles={{
-              input: { ...defaultStyle, ...transitionStyles[state] },
-            }}
             rightSection={
               <ActionIcon variant="subtle" onClick={handleClick} size="sm">
-                <IconSearch />
+                {pending ? <Loader size="sm" /> : <IconSearch />}
               </ActionIcon>
             }
-            leftSection={null}
-            size="sm"
-            radius="sm"
-            onBlur={close}
           />
         );
       }}
     </Transition>
+  );
+}
+
+export default function SearchControl() {
+  const [_state, action] = useFormState(search, null);
+
+  return (
+    <form action={action}>
+      <Input />
+    </form>
   );
 }
