@@ -121,6 +121,7 @@ export default function RecipeGrid({ data }: RecipeGridProps) {
             >
               <CardSection className={styles.imageWrapper}>
                 <NextImage
+                  unoptimized
                   src={d.img}
                   alt={d.title}
                   sizes="300px"
