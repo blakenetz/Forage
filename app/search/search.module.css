@@ -6,9 +6,10 @@
   }
   --title-height: calc(var(--title-font-size) * var(--mantine-h4-line-height));
   --search-navbar-width: calc((var(--mantine-spacing-sm) * 2) + 36px);
-  --body-height: calc(
-    100dvh - calc(calc(var(--mantine-spacing-xs) * 2) + var(--title-height))
+  --header-height: calc(
+    calc(var(--mantine-spacing-xs) * 2) + var(--title-height)
   );
+  --body-height: calc(100dvh - var(----header-height));
 }
 
 .header {
@@ -17,6 +18,12 @@
   justify-content: space-between;
   padding: var(--mantine-spacing-xs);
   gap: var(--mantine-spacing-xs);
+  position: fixed;
+  height: var(--header-height);
+  top: 0;
+  z-index: var(--mantine-z-index-app);
+  width: 100%;
+  background: var(--mantine-color-white);
 }
 
 .title {
@@ -54,6 +61,7 @@
 }
 
 .grid {
+  margin-top: var(--header-height);
   padding-inline-start: calc(
     var(--search-navbar-width) + var(--mantine-spacing-sm)
   );
