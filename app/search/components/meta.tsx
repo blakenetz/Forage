@@ -15,7 +15,7 @@ export default function Meta(props: Recipe["meta"]) {
 
   return (
     <Stack mt="md" gap={5}>
-      {rating && (
+      {!!rating && (
         <Group gap={5}>
           <Group gap={0}>
             {Array.from({ length: 5 }, (_val, i) =>
@@ -32,13 +32,13 @@ export default function Meta(props: Recipe["meta"]) {
         </Group>
       )}
 
-      {time && (
+      {!!time && (
         <Text size="xs" className={styles.small}>
           <IconClock size="1rem" /> {time}
         </Text>
       )}
 
-      {tags && (
+      {!!tags && (
         <Text size="xs" className={styles.small}>
           <IconTagStarred size="1rem" /> {tags}
         </Text>

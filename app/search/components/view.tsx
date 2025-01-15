@@ -65,7 +65,7 @@ export default function RecipeGrid({ data }: RecipeGridProps) {
   return (
     <>
       <InlineStyles selector={`.${styles.main}`} styles={inlineStyles} />
-      <Header selected={selected} />
+      <Header />
       <Aside
         buttons={sources.map((source) => {
           const button = (
