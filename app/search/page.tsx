@@ -4,11 +4,12 @@ import { redirect } from "next/navigation";
 import { fetchRecipeData } from "./actions";
 import View from "./components/view";
 
-export default async function Search({
-  searchParams,
-}: {
-  searchParams: { [param]: string };
-}) {
+export default async function Search(
+  props: {
+    searchParams: Promise<{ [param]: string }>;
+  }
+) {
+  const searchParams = await props.searchParams;
   const query = searchParams[param];
   if (!query) redirect("/");
 
