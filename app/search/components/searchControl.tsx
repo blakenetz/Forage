@@ -36,7 +36,7 @@ function Input() {
   };
 
   return (
-    <Transition in={visible} timeout={500}>
+    <Transition in={visible} timeout={500} nodeRef={ref}>
       {(state) => {
         const isActive = state === "entering" || state === "exiting";
         const inputStyles = { ...defaultStyle, ...transitionStyles[state] };
@@ -57,9 +57,13 @@ function Input() {
               ),
             }}
             rightSection={
-              <ActionIcon variant="subtle" onClick={handleClick} size="sm">
-                {pending ? <Loader size="sm" /> : <IconSearch />}
-              </ActionIcon>
+              pending ? (
+                <Loader size="xs" />
+              ) : (
+                <ActionIcon variant="subtle" onClick={handleClick} size="sm">
+                  <IconSearch />
+                </ActionIcon>
+              )
             }
           />
         );
