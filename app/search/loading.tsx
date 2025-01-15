@@ -7,7 +7,7 @@ import { sources } from "./data";
 export default function Loading() {
   return (
     <>
-      <Header />
+      <Header loading />
       <Aside
         buttons={sources.map((s) => (
           <Skeleton key={s} height={36} />

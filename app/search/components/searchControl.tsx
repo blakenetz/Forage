@@ -6,8 +6,8 @@ import { ActionIcon, Loader, TextInput } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import { IconSearch } from "@tabler/icons-react";
 import clsx from "clsx";
-import { CSSProperties, useRef } from "react";
-import { useFormState, useFormStatus } from "react-dom";
+import { CSSProperties, useRef, useActionState } from "react";
+import { useFormStatus } from "react-dom";
 import { Transition, TransitionStatus } from "react-transition-group";
 import styles from "../search.module.css";
 
@@ -36,7 +36,7 @@ function Input() {
   };
 
   return (
-    <Transition in={visible} timeout={500}>
+    <Transition in={visible} timeout={500} nodeRef={ref}>
       {(state) => {
         const isActive = state === "entering" || state === "exiting";
         const inputStyles = { ...defaultStyle, ...transitionStyles[state] };
@@ -57,9 +57,13 @@ function Input() {
               ),
             }}
             rightSection={
-              <ActionIcon variant="subtle" onClick={handleClick} size="sm">
-                {pending ? <Loader size="sm" /> : <IconSearch />}
-              </ActionIcon>
+              pending ? (
+                <Loader size="xs" />
+              ) : (
+                <ActionIcon variant="subtle" onClick={handleClick} size="sm">
+                  <IconSearch />
+                </ActionIcon>
+              )
             }
           />
         );
@@ -69,7 +73,7 @@ function Input() {
 }
 
 export default function SearchControl() {
-  const [_state, action] = useFormState(search, null);
+  const [_state, action] = useActionState(search, null);
 
   return (
     <form action={action}>
