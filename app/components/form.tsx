@@ -1,6 +1,6 @@
 "use client";
 
-import { TextInput } from "@mantine/core";
+import { Loader, TextInput } from "@mantine/core";
 import { IconSearch } from "@tabler/icons-react";
 
 import { searchProps } from "../util";
@@ -17,7 +17,10 @@ export default function Form() {
         size="lg"
         radius="lg"
         {...searchProps}
-        {...(isPending && { disabled: true })}
+        {...(isPending && {
+          disabled: true,
+          rightSection: <Loader size="sm" />,
+        })}
       />
     </form>
   );
