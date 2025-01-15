@@ -3,8 +3,8 @@ import React from "react";
 import styles from "../search.module.css";
 
 interface AsideProps {
-  buttons?: React.ReactElement<any>[];
-  actionIcon?: React.ReactElement<any>;
+  buttons?: React.ReactElement[];
+  actionIcon?: React.ReactElement;
 }
 
 export default function Aside({ buttons, actionIcon }: AsideProps) {
