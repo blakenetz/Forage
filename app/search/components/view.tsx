@@ -2,7 +2,6 @@
 
 import {
   ActionIcon,
-  Anchor,
   Button,
   Card,
   CardSection,
@@ -32,6 +31,7 @@ import Header from "./header";
 import Aside from "./aside";
 import Grid, { defaultGridProps } from "./grid";
 import { CSSVariable } from "@/types";
+import Link from "next/link";
 
 type RecipeGridProps = PropsWithChildren<{
   data: Record<Source, Recipe[]>;
@@ -106,12 +106,7 @@ export default function RecipeGrid({ data }: RecipeGridProps) {
 
       <Grid cols={cols}>
         {recipes.map((d) => (
-          <Anchor
-            key={d.link}
-            href={d.link}
-            rel="noopener noreferrer"
-            target="__blank"
-          >
+          <Link key={d.link} href={`/recipe?url=${encodeURIComponent(d.link)}`}>
             <Card
               shadow="sm"
               padding="xs"
@@ -141,7 +136,7 @@ export default function RecipeGrid({ data }: RecipeGridProps) {
               )}
               <Meta {...d.meta} />
             </Card>
-          </Anchor>
+          </Link>
         ))}
       </Grid>
     </>

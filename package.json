@@ -9,9 +9,12 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@ai-sdk/anthropic": "^1.1.2",
+    "@ai-sdk/openai": "^1.1.2",
     "@mantine/core": "^7.16.0",
     "@mantine/hooks": "^7.16.0",
     "@tabler/icons-react": "^3.28.1",
+    "ai": "^4.1.2",
     "clsx": "^2.1.1",
     "he": "^1.2.0",
     "lodash": "^4.17.21",
