@@ -107,10 +107,10 @@ export default function RecipeGrid({ data }: RecipeGridProps) {
       <Grid cols={cols}>
         {recipes.map((d) => (
           <Anchor
-            key={d.link}
             href={d.link}
             rel="noopener noreferrer"
             target="__blank"
+            key={d.link}
           >
             <Card
               shadow="sm"

@@ -19,6 +19,8 @@ export function extractQuery<Q extends Query>(source: Source) {
   return queries.find((q) => q.source === source)! as Q;
 }
 
+export const removeQueryParams = (url: string) => url.split('?')[0];
+
 export const searchProps: TextInputProps = {
   name: "q",
   "aria-label": "Search for a recipe",

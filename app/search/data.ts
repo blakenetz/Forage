@@ -1,5 +1,5 @@
 import { EpicuriousRecipe } from "@/types";
-import { PartialRecord } from "@/util";
+import { PartialRecord, removeQueryParams } from "@/util";
 import { capitalize } from "lodash";
 import { HTMLElement as ParserHTMLElement } from "node-html-parser";
 import he from "he";
@@ -80,7 +80,9 @@ export const queries: Query[] = [
       link: {
         selectors: ['a[class^="link"]', "article a"],
         callback: (els) =>
-          `https://cooking.nytimes.com${els[0].getAttribute("href")}`,
+          removeQueryParams(
+            `https://cooking.nytimes.com${els[0].getAttribute("href")}`
+          ),
       },
       img: {
         selectors: ['img[class^="cardimage_image"]', "article a figure img"],
@@ -123,7 +125,7 @@ export const queries: Query[] = [
       },
       link: {
         selectors: ["a"],
-        callback: (els) => els[0].getAttribute("href")!,
+        callback: (els) => removeQueryParams(els[0].getAttribute("href")!),
       },
       img: {
         selectors: [".card__media img", "img"],
