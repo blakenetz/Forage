@@ -3,37 +3,7 @@ import { PartialRecord, removeQueryParams } from "@/util";
 import { capitalize } from "lodash";
 import { HTMLElement as ParserHTMLElement } from "node-html-parser";
 import he from "he";
-
-export const sources = [
-  "newYorkTimesCooking",
-  "epicurious",
-  "bonAppetit",
-  "seriousEats",
-] as const;
-export type Source = (typeof sources)[number];
-
-export type RecipeData = {
-  title: string;
-  img: string;
-  link: string;
-  author?: string;
-  description?: string;
-  time?: string;
-  rating?: string;
-  ratingCount?: string;
-  tags?: string;
-};
-
-export type Recipe = Pick<RecipeData, "title" | "img" | "link"> & {
-  description?: string;
-  author?: string;
-  meta: {
-    rating?: number;
-    ratingCount?: number;
-    time?: string;
-    tags?: string;
-  };
-};
+import { Source, RecipeData, Recipe } from "@/data";
 
 export type Results = Record<Source, Recipe[]>;
 

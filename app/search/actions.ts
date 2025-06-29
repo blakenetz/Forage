@@ -1,7 +1,8 @@
 "use server";
 
 import { parse, HTMLElement as ParserHTMLElement } from "node-html-parser";
-import { HTMLQuery, Recipe, RecipeData, Source, sources } from "./data";
+import { HTMLQuery } from "./data";
+import { Source, sources, Recipe, RecipeData } from "@/data";
 import { extractQuery } from "@/util";
 import he from "he";
 

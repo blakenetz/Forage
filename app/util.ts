@@ -1,5 +1,6 @@
 import { TextInputProps } from "@mantine/core";
-import { queries, Query, Source } from "./search/data";
+import { queries, Query } from "./search/data";
+import { Source } from "./data";
 
 export type PartialRecord<K extends string, T> = {
   [P in K]?: T;

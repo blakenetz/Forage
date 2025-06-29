@@ -6,7 +6,7 @@ import {
 } from "@tabler/icons-react";
 import { Stack, Group, Text } from "@mantine/core";
 import styles from "../search.module.css";
-import { Recipe } from "../data";
+import { Recipe } from "@/data";
 
 export default function Meta(props: Recipe["meta"]) {
   if (!props) return null;
