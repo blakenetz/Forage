@@ -1,0 +1,161 @@
+.strip {
+  display: flex;
+  justify-content: space-between;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--ink);
+}
+
+.titlePage {
+  display: grid;
+  grid-template-columns: 1.25fr 1fr;
+  gap: 72px;
+  padding: 9vh 0 12vh;
+}
+
+.title {
+  font-weight: 400;
+  font-size: 168px;
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+
+.subtitle {
+  margin-top: 30px;
+  font-style: italic;
+  font-size: 26px;
+  color: var(--ink-2);
+}
+
+.search {
+  max-width: 620px;
+  margin-top: 64px;
+}
+
+.season {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  margin-top: 18px;
+}
+
+.season a {
+  border-bottom: 1px solid var(--rule);
+}
+
+.season a:hover {
+  border-bottom-color: var(--spot);
+}
+
+.contentsTitle {
+  font-weight: 400;
+  font-size: 20px;
+  font-variant: all-small-caps;
+  letter-spacing: 0.02em;
+  padding-bottom: 6px;
+  margin-bottom: 8px;
+  border-bottom: 1px solid var(--ink);
+}
+
+.contents ol {
+  list-style: none;
+}
+
+.contents li {
+  display: grid;
+  grid-template-columns: 36px auto 1fr auto;
+  gap: 8px;
+  align-items: baseline;
+  padding: 7px 0;
+  font-size: 21px;
+}
+
+.contents li a:hover {
+  text-decoration: underline;
+  text-decoration-color: var(--spot);
+  text-underline-offset: 3px;
+}
+
+.contentsNumeral {
+  color: var(--spot);
+}
+
+.leader {
+  border-bottom: 1px dotted var(--ink-2);
+  transform: translateY(-5px);
+}
+
+.colophon {
+  margin-top: 40px;
+  max-width: 44ch;
+  font-size: 16px;
+  font-style: italic;
+  color: var(--ink-2);
+}
+
+.chapter {
+  padding-top: 56px;
+}
+
+.collection + .collection {
+  margin-top: 40px;
+}
+
+.collectionHead {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 16px;
+  margin-bottom: 14px;
+}
+
+.collectionTitle {
+  font-weight: 400;
+  font-style: italic;
+  font-size: 24px;
+}
+
+.collectionLink {
+  font-style: italic;
+  border-bottom: 1px solid var(--spot);
+  white-space: nowrap;
+}
+
+@media (max-width: 900px) {
+  .titlePage {
+    grid-template-columns: 1fr;
+    gap: 48px;
+  }
+}
+
+@media (max-width: 720px) {
+  .titlePage {
+    padding: 40px 0 24px;
+  }
+
+  .title {
+    font-size: 96px;
+  }
+
+  .subtitle {
+    margin-top: 16px;
+    font-size: 21px;
+  }
+
+  .search {
+    margin-top: 36px;
+  }
+
+  .contents li {
+    grid-template-columns: 36px auto 1fr;
+    font-size: 19px;
+  }
+
+  /* domains don't fit beside the names; the chapters below repeat them */
+  .contents li > :last-child {
+    display: none;
+  }
+
+  .collectionTitle {
+    font-size: 21px;
+  }
+}

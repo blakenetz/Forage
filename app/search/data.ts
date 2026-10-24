@@ -1,25 +1,6 @@
-import {
-  EpicuriousRecipe,
-  OttolenghiRecipe,
-  OttolenghiRecipesResponse,
-} from "@/types";
-import { PartialRecord } from "@/util";
-import { capitalize } from "lodash";
-import { HTMLElement as ParserHTMLElement } from "node-html-parser";
-import { decode } from "he";
-
-export const sources = [
-  "newYorkTimesCooking",
-  "epicurious",
-  "bonAppetit",
-  "seriousEats",
-  "ottolenghi",
-  "mollyBaz",
-] as const;
-export type Source = (typeof sources)[number];
-
-export const placeholderImg =
-  "https://images.unsplash.com/photo-1523049673857-eb18f1d7b578?q=80&w=3475&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D";
+import type { OttolenghiRecipe, OttolenghiRecipesResponse } from "@/types";
+import { requestHeaders, type Source } from "@/sources";
+import type { HTMLElement as ParserHTMLElement } from "node-html-parser";
 
 export type RecipeData = {
   title: string;
@@ -33,7 +14,8 @@ export type RecipeData = {
   tags?: string;
 };
 
-export type Recipe = Pick<RecipeData, "title" | "img" | "link"> & {
+export type Recipe = Pick<RecipeData, "title" | "link"> & {
+  img?: string;
   description?: string;
   author?: string;
   meta: {
@@ -44,44 +26,60 @@ export type Recipe = Pick<RecipeData, "title" | "img" | "link"> & {
   };
 };
 
-export type Results = Record<Source, Recipe[]>;
+export type SearchResult = {
+  recipes: Recipe[];
+  /** the source errored or blocked us, as opposed to having no matches */
+  failed: boolean;
+};
 
-type QueryMap = PartialRecord<
-  keyof RecipeData,
-  {
+type QueryMap = {
+  [K in keyof RecipeData]?: {
     selectors: string[];
     callback?: (els: ParserHTMLElement[]) => string;
-  }
->;
+  };
+};
 
-interface BaseQuery {
-  source: Source;
+export type HTMLSource = Exclude<Source, "ottolenghi">;
+
+/** How to read recipe cards out of a listing page */
+export interface CardQuery {
+  rootSelector: string;
+  /** All queries created by Claude AI */
+  queries: QueryMap;
+}
+
+export interface HTMLQuery extends CardQuery {
   url: (q: string) => string;
 }
 
-export interface HTMLQuery extends BaseQuery {
-  source: "newYorkTimesCooking" | "seriousEats" | "mollyBaz";
-  /** All queries created by Claude AI */
-  queries: QueryMap;
-  rootSelector: string;
-}
+/** Serious Eats renders search results and recipe listings with the same card */
+const seriousEatsCard: QueryMap = {
+  title: { selectors: [".card__title-text"] },
+  author: {
+    selectors: [".card__byline"],
+    callback: ([byline]) =>
+      (byline.getAttribute("data-byline") ?? "").replace(/^by\s+/i, ""),
+  },
+  link: {
+    // each card is itself the link, and queries only see its descendants
+    selectors: [".card__content"],
+    callback: ([content]) => content.closest("a")?.getAttribute("href") ?? "",
+  },
+  img: {
+    selectors: [".card__img"],
+    callback: ([img]) => img.getAttribute("data-src") ?? "",
+  },
+};
 
-export interface ScriptQuery extends BaseQuery {
-  source: "bonAppetit" | "epicurious";
-  extractor: (source: Source, root: ParserHTMLElement) => Recipe[];
-}
+/** Serious Eats' "All Recipes" listing, newest first */
+export const seriousEatsNewest: CardQuery & { url: string } = {
+  url: "https://www.seriouseats.com/all-recipes-5117985",
+  rootSelector: ".mntl-three-post__inner a.card, .tax-sc__recirc-list a.card",
+  queries: seriousEatsCard,
+};
 
-/** Sources searched through an API instead of a scraped search page */
-interface APIQuery {
-  source: "ottolenghi";
-  search: (q: string) => Promise<Recipe[]>;
-}
-
-export type Query = HTMLQuery | ScriptQuery | APIQuery;
-
-export const queries: Query[] = [
-  {
-    source: "newYorkTimesCooking",
+export const htmlQueries: Record<HTMLSource, HTMLQuery> = {
+  newYorkTimesCooking: {
     url: (q) => "https://cooking.nytimes.com/search?q=" + q,
     rootSelector: 'li > [class*="recipecard"]',
     queries: {
@@ -101,63 +99,26 @@ export const queries: Query[] = [
         selectors: ['img[class^="cardimage_image"]', "article a figure img"],
         callback: (els) => els[0].getAttribute("src")!,
       },
-      time: {
-        selectors: [
-          'p[class^="pantry--ui-xs recipecard_cookTime"]',
-          "a section div p:last-child",
-        ],
-      },
+      time: { selectors: ['p[class*="recipecard_cookTime"]'] },
       rating: {
-        selectors: [
-          'span[class^="recipecard_stars"] svg[class*="filledStar"]',
-          'a section div[class*="rating"] span[class*="filledStar"]',
-        ],
-        callback: (els) => els.length.toString(),
+        // "5138 ratings with an average rating of 4.5 out of 5 stars"
+        selectors: ['span[class*="recipecard_ratingCaption"]'],
+        callback: ([caption]) =>
+          caption.rawText.match(/average rating of ([\d.]+)/)?.[1] ?? "",
       },
-      ratingCount: {
-        selectors: [
-          'div[class^="recipecard_recipeCardRating"] p[class^="pantry--ui-xs"]',
-          'a section div[class*="rating"] p',
-        ],
-      },
+      ratingCount: { selectors: ['p[class*="recipecard_ratingLabel"]'] },
       tags: {
         selectors: ['a[class^="kickerlabel"]', 'a[href*="tag"]'],
       },
     },
   },
-  {
-    source: "seriousEats",
-    url: (q) => "https://www.seriouseats.com/search?q=" + q,
-    rootSelector: ".card-list__item",
-    queries: {
-      title: { selectors: [".card__title .card__underline"] },
-      author: {
-        selectors: [".card__author-name"],
-        callback: (els) =>
-          els[0].getAttribute("data-byline-author")!.replace(/by/i, "").trim(),
-      },
-      link: {
-        selectors: ["a"],
-        callback: (els) => els[0].getAttribute("href")!,
-      },
-      img: {
-        selectors: [".card__media img", "img"],
-        callback: (els) => els[0].getAttribute("data-src")!,
-      },
-    },
+  seriousEats: {
+    url: (q) =>
+      "https://www.seriouseats.com/search?q=" + encodeURIComponent(q),
+    rootSelector: ".mntl-search-results__list a.card",
+    queries: seriousEatsCard,
   },
-  {
-    source: "bonAppetit",
-    url: (q) => `https://www.bonappetit.com/search?q=${q}&content=recipe`,
-    extractor: epicuriousExtractor,
-  },
-  {
-    source: "epicurious",
-    url: (q) => `https://www.epicurious.com/search?q=${q}&content=recipe`,
-    extractor: epicuriousExtractor,
-  },
-  {
-    source: "mollyBaz",
+  mollyBaz: {
     url: (q) => "https://mollybaz.com/?s=" + encodeURIComponent(q),
     rootSelector: ".pp-content-grid-post",
     queries: {
@@ -173,65 +134,20 @@ export const queries: Query[] = [
       },
       img: {
         selectors: [".pp-content-grid-post-image img"],
-        callback: (els) => els[0].getAttribute("src")!,
+        // `src` is the full-size upload (often 2560px); use the ~650px srcset candidate
+        callback: ([img]) => {
+          const candidates = (img.getAttribute("srcset") ?? "")
+            .split(",")
+            .map((candidate) => candidate.trim().split(/\s+/))
+            .map(([url, width]) => ({ url, width: parseInt(width) }))
+            .filter(({ width }) => width >= 600)
+            .sort((a, b) => a.width - b.width);
+          return candidates[0]?.url ?? img.getAttribute("src")!;
+        },
       },
     },
   },
-  {
-    source: "ottolenghi",
-    search: ottolenghiSearch,
-  },
-];
-
-function epicuriousExtractor(
-  source: Source,
-  root: ParserHTMLElement
-): Recipe[] {
-  const baseUrl = `https://${source.toLocaleLowerCase()}.com`;
-
-  const filterPredicate = (el: ParserHTMLElement) =>
-    !el.getAttribute("defer") && el.rawText.includes("__PRELOADED_STATE__");
-
-  const scriptEl = root
-    .querySelectorAll('script[type="text/javascript"]')
-    .filter(filterPredicate)
-    .pop();
-
-  if (!scriptEl) {
-    console.log(`Unable to find script el for ${source}`);
-    return [];
-  }
-
-  const str = scriptEl.rawText
-    .replace("window.__PRELOADED_STATE__ = ", "")
-    .replace(/;/g, "");
-
-  try {
-    const data = JSON.parse(str);
-    const items: EpicuriousRecipe[] = data.transformed.search.items;
-
-    return items.map((item) => {
-      return {
-        title: decode(item.dangerousHed),
-        description: decode(item.dangerousDek),
-        author: item.contributors.author?.items
-          .map((item) => item.name)
-          .join(", "),
-        img: item.image.sources.md.url,
-        link: new URL(item.url, baseUrl).toString(),
-        meta: {
-          rating: item.rating,
-          ratingCount: item.reviewsCount,
-          tags: item.imageLabels.map(capitalize).join(", "),
-        },
-      };
-    });
-  } catch (error) {
-    console.log(error);
-
-    return [];
-  }
-}
+};
 
 const ottolenghiStorefront = {
   url: "https://ottolenghi-group.myshopify.com/api/2024-04/graphql.json",
@@ -246,6 +162,7 @@ const ottolenghiStorefront = {
         main_ingredient: field(key: "main_ingredient") { value }
         meal: field(key: "meal") { value }
         collection: field(key: "collection") { value }
+        season: field(key: "season") { value }
         images: field(key: "images") {
           references(first: 1) {
             nodes { ... on MediaImage { image { url(transform: { maxWidth: 650 }) } } }
@@ -257,18 +174,26 @@ const ottolenghiStorefront = {
   }`,
 };
 
+export type OttolenghiEntry = {
+  recipe: Recipe;
+  tags: string[];
+  seasons: string[];
+};
+
 /**
  * ottolenghi.co.uk has no server-side recipe search: its search page downloads
  * every recipe from the Storefront API and filters them in the browser.
+ * Entries are newest first; unpublished recipes are skipped.
  */
-async function fetchOttolenghiRecipes(): Promise<OttolenghiRecipe[]> {
-  const recipes: OttolenghiRecipe[] = [];
+export async function fetchOttolenghiCatalogue(): Promise<OttolenghiEntry[]> {
+  const nodes: OttolenghiRecipe[] = [];
   let cursor: string | null = null;
 
   do {
     const res: Response = await fetch(ottolenghiStorefront.url, {
       method: "POST",
       headers: {
+        ...requestHeaders,
         "content-type": "application/json",
         "x-shopify-storefront-access-token": ottolenghiStorefront.token,
       },
@@ -283,51 +208,56 @@ async function fetchOttolenghiRecipes(): Promise<OttolenghiRecipe[]> {
       throw new Error(`Ottolenghi storefront returned ${res.status}`);
 
     const { data }: OttolenghiRecipesResponse = await res.json();
-    const { nodes, pageInfo } = data.metaobjects;
-    recipes.push(...nodes);
+    nodes.push(...data.metaobjects.nodes);
+    const { pageInfo } = data.metaobjects;
     cursor = pageInfo.hasNextPage ? pageInfo.endCursor : null;
   } while (cursor);
 
-  return recipes;
+  return nodes.flatMap((node) => {
+    const title = node.title?.value;
+    if (!title || !node.onlineStoreUrl) return [];
+
+    const tags = [node.main_ingredient, node.meal, node.collection]
+      .filter((field) => field !== null)
+      .flatMap((field) => JSON.parse(field.value) as string[]);
+
+    return {
+      recipe: {
+        title,
+        description: node.description?.value,
+        img: node.images?.references?.nodes[0]?.image?.url,
+        link: node.onlineStoreUrl,
+        meta: { tags: tags.join(", ") || undefined },
+      },
+      tags,
+      seasons: node.season ? (JSON.parse(node.season.value) as string[]) : [],
+    };
+  });
 }
 
 /** Every search term must appear in the title or tags; title matches rank first */
-async function ottolenghiSearch(query: string): Promise<Recipe[]> {
+export async function searchOttolenghi(query: string): Promise<SearchResult> {
   const terms = query.toLowerCase().split(/\s+/).filter(Boolean);
 
   try {
-    const recipes = await fetchOttolenghiRecipes();
+    const catalogue = await fetchOttolenghiCatalogue();
     const titleMatches: Recipe[] = [];
     const tagMatches: Recipe[] = [];
 
-    for (const recipe of recipes) {
-      const title = recipe.title?.value;
-      if (!title || !recipe.onlineStoreUrl) continue;
-
-      const tags = [recipe.main_ingredient, recipe.meal, recipe.collection]
-        .filter((field) => field !== null)
-        .flatMap((field) => JSON.parse(field.value) as string[]);
-      const titleText = title.toLowerCase();
+    for (const { recipe, tags } of catalogue) {
+      const titleText = recipe.title.toLowerCase();
       const allText = [titleText, ...tags].join(" ").toLowerCase();
 
-      const result: Recipe = {
-        title,
-        description: recipe.description?.value,
-        img: recipe.images?.references?.nodes[0]?.image?.url ?? placeholderImg,
-        link: recipe.onlineStoreUrl,
-        meta: { tags: tags.join(", ") || undefined },
-      };
-
       if (terms.every((term) => titleText.includes(term)))
-        titleMatches.push(result);
+        titleMatches.push(recipe);
       else if (terms.every((term) => allText.includes(term)))
-        tagMatches.push(result);
+        tagMatches.push(recipe);
     }
 
-    return [...titleMatches, ...tagMatches];
+    return { recipes: [...titleMatches, ...tagMatches], failed: false };
   } catch (error) {
     console.log(error);
 
-    return [];
+    return { recipes: [], failed: true };
   }
 }

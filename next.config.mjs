@@ -1,18 +1,8 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  experimental: {
-    optimizePackageImports: ["@mantine/core", "@mantine/hooks"],
-  },
   images: {
-    remotePatterns: [
-      { hostname: "**.nyt.com" },
-      { hostname: "**.seriouseats.com" },
-      { hostname: "images.unsplash.com" },
-      { hostname: "assets.bonappetit.com" },
-      { hostname: "assets.epicurious.com" },
-      { hostname: "cdn.shopify.com" },
-      { hostname: "mollybaz.com" },
-    ],
+    // recipe photos come straight from each source's CDN, already sized
+    unoptimized: true,
   },
 };
 
