@@ -2,14 +2,14 @@
 
 Forage for your next meal!
 
-Search [New York Times Cooking](https://cooking.nytimes.com/), [bon appetit](https://www.bonappetit.com/), [epicurious](https://www.epicurious.com/), [serious eats](https://www.seriouseats.com/), [Ottolenghi](https://ottolenghi.co.uk/pages/recipes) and [Molly Baz](https://mollybaz.com/club/all-recipes/) in parallel.
+Search [New York Times Cooking](https://cooking.nytimes.com/), [Serious Eats](https://www.seriouseats.com/), [Ottolenghi](https://ottolenghi.co.uk/pages/recipes) and [Molly Baz](https://mollybaz.com/club/all-recipes/) at once. Each site's results stream in as it answers. The home page shows collections pulled from the sites themselves (NYT Cooking's seasonal feature and newest recipes, Serious Eats' newest recipes, Ottolenghi's newest and seasonal recipes, Molly Baz's recent and most popular) and is rebuilt hourly.
 
 Deployed at <https://forage-drab.vercel.app/>
 
 ## Tech stack
 
-- [Next.js](https://nextjs.org/)
-- [Mantine](https://mantine.dev/)
+- [Next.js](https://nextjs.org/) App Router, server-rendered with plain CSS modules
+- [node-html-parser](https://github.com/taoqf/node-html-parser) for scraping search pages
 
 ## Development
 
