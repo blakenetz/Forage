@@ -1,7 +1,14 @@
 "use server";
 
 import { parse, HTMLElement as ParserHTMLElement } from "node-html-parser";
-import { HTMLQuery, Recipe, RecipeData, Source, sources } from "./data";
+import {
+  HTMLQuery,
+  placeholderImg,
+  Recipe,
+  RecipeData,
+  Source,
+  sources,
+} from "./data";
 import { extractQuery } from "@/util";
 import { decode } from "he";
 
@@ -30,7 +37,7 @@ function extractRecipe(source: Source, root: ParserHTMLElement): RecipeData {
     },
     {
       title: "Unknown",
-      img: "https://images.unsplash.com/photo-1523049673857-eb18f1d7b578?q=80&w=3475&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+      img: placeholderImg,
       link: "",
     }
   );
@@ -59,8 +66,12 @@ function parseRecipeData(data: RecipeData): Recipe {
   };
 }
 
-async function fetchRecipeDataBySource(source: Source, query: string) {
+async function fetchRecipeDataBySource(
+  source: Source,
+  query: string
+): Promise<Recipe[]> {
   const q = extractQuery(source);
+  if (q.source === "ottolenghi") return q.search(query);
 
   const res = await fetch(q.url(query));
   const html = await res.text();
@@ -70,6 +81,7 @@ async function fetchRecipeDataBySource(source: Source, query: string) {
   switch (q.source) {
     case "newYorkTimesCooking":
     case "seriousEats":
+    case "mollyBaz":
       const recipes = root.querySelectorAll(q.rootSelector);
       const extractor = extractRecipe.bind(null, source);
 

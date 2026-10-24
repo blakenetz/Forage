@@ -15,10 +15,12 @@ import {
 import { useDisclosure } from "@mantine/hooks";
 import {
   IconBrandNytimes,
+  IconCheese,
   IconDumpling,
   IconGlassFull,
   IconLayoutSidebarLeftCollapse,
   IconLayoutSidebarLeftExpand,
+  IconLemon,
   IconSalad,
 } from "@tabler/icons-react";
 import { startCase } from "lodash";
@@ -42,6 +44,8 @@ const sourceMap = new Map<Source, React.ReactElement>([
   ["epicurious", <IconGlassFull key="epicurious" />],
   ["seriousEats", <IconDumpling key="seriousEats" />],
   ["bonAppetit", <IconSalad key="bonAppetit" />],
+  ["ottolenghi", <IconLemon key="ottolenghi" />],
+  ["mollyBaz", <IconCheese key="mollyBaz" />],
 ]);
 
 export default function RecipeGrid({ data }: RecipeGridProps) {

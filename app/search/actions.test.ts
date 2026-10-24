@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import type { OttolenghiRecipe } from "@/types";
 import { fetchRecipeData } from "./actions";
 
 const nytHtml = `
@@ -73,19 +74,91 @@ const epicuriousItem = {
   contributors: {
     author: {
       items: [
-        { name: "Anna Stockwell", dangerousBio: "", dangerousTitle: "", url: "" },
+        {
+          name: "Anna Stockwell",
+          dangerousBio: "",
+          dangerousTitle: "",
+          url: "",
+        },
         { name: "Joe Sevier", dangerousBio: "", dangerousTitle: "", url: "" },
       ],
     },
   },
 };
 
-function stubFetch(pages: Record<string, string>) {
-  const fetchMock = vi.fn<typeof fetch>(async (input) => {
+const mollyBazHtml = `
+<div class="pp-content-post-grid">
+  <div class="pp-content-post pp-content-grid-post post-5118 category-noods entry">
+    <div class="pp-content-grid-post-image">
+      <a href='https://mollybaz.com/spaghetti-os/?swpmtx=abc&swpmtxnonce=def'>
+        <img src="https://mollybaz.com/wp-content/uploads/spaghetti-os.jpg" class="pp-post-img" />
+      </a>
+    </div>
+    <div class="pp-content-grid-post-text">
+      <h3 class="pp-content-grid-post-title"><a href='https://mollybaz.com/spaghetti-os/?swpmtx=abc&swpmtxnonce=def'>End of Summer <mark class="searchwp-highlight">Spaghetti</mark>-O&#8217;s</a></h3>
+    </div>
+  </div>
+</div>`;
+
+const ottolenghiHost = "ottolenghi-group.myshopify.com";
+
+function ottolenghiRecipe(
+  title: string,
+  tags: { main_ingredient?: string[]; meal?: string[]; collection?: string[] },
+  onlineStoreUrl:
+    | string
+    | null = `https://ottolenghi.co.uk/pages/recipes/${title.toLowerCase().replace(/\W+/g, "-")}`
+): OttolenghiRecipe {
+  const list = (values?: string[]) =>
+    values ? { value: JSON.stringify(values) } : null;
+  return {
+    onlineStoreUrl,
+    title: { value: title },
+    description: { value: `${title} description` },
+    main_ingredient: list(tags.main_ingredient),
+    meal: list(tags.meal),
+    collection: list(tags.collection),
+    images: {
+      references: {
+        nodes: [{ image: { url: `https://cdn.shopify.com/${title}.jpg` } }],
+      },
+    },
+  };
+}
+
+/** Serves the Storefront catalogue in pages, following the request's cursor */
+function ottolenghiCatalogue(pages: OttolenghiRecipe[][]) {
+  return (init?: RequestInit) => {
+    const { variables } = JSON.parse(String(init?.body));
+    const index = variables.cursor ? Number(variables.cursor) : 0;
+    const hasNextPage = index + 1 < pages.length;
+    return JSON.stringify({
+      data: {
+        metaobjects: {
+          nodes: pages[index],
+          pageInfo: {
+            hasNextPage,
+            endCursor: hasNextPage ? String(index + 1) : null,
+          },
+        },
+      },
+    });
+  };
+}
+
+type StubResponse = string | Response | ((init?: RequestInit) => string);
+
+/** Hosts without a stub get an empty page, or an empty Ottolenghi catalogue */
+function stubFetch(responses: Record<string, StubResponse> = {}) {
+  const fetchMock = vi.fn<typeof fetch>(async (input, init) => {
     const url = new URL(input.toString());
-    const body = pages[url.hostname];
-    if (body === undefined) throw new Error(`Unexpected fetch: ${url}`);
-    return new Response(body);
+    const response =
+      responses[url.hostname] ??
+      (url.hostname === ottolenghiHost ? ottolenghiCatalogue([[]]) : "");
+    if (response instanceof Response) return response;
+    return new Response(
+      typeof response === "function" ? response(init) : response
+    );
   });
   vi.stubGlobal("fetch", fetchMock);
   return fetchMock;
@@ -102,12 +175,7 @@ describe("fetchRecipeData", () => {
   });
 
   it("queries every source with the search term", async () => {
-    const fetchMock = stubFetch({
-      "cooking.nytimes.com": "",
-      "www.seriouseats.com": "",
-      "www.bonappetit.com": "",
-      "www.epicurious.com": "",
-    });
+    const fetchMock = stubFetch();
 
     await fetchRecipeData("tacos");
 
@@ -117,16 +185,13 @@ describe("fetchRecipeData", () => {
       "https://www.epicurious.com/search?q=tacos&content=recipe",
       "https://www.bonappetit.com/search?q=tacos&content=recipe",
       "https://www.seriouseats.com/search?q=tacos",
+      `https://${ottolenghiHost}/api/2024-04/graphql.json`,
+      "https://mollybaz.com/?s=tacos",
     ]);
   });
 
   it("extracts NYT Cooking cards, falling back to secondary selectors", async () => {
-    stubFetch({
-      "cooking.nytimes.com": nytHtml,
-      "www.seriouseats.com": "",
-      "www.bonappetit.com": "",
-      "www.epicurious.com": "",
-    });
+    stubFetch({ "cooking.nytimes.com": nytHtml });
 
     const { newYorkTimesCooking } = await fetchRecipeData("pasta");
 
@@ -147,12 +212,7 @@ describe("fetchRecipeData", () => {
   });
 
   it("extracts Serious Eats cards and strips the byline prefix", async () => {
-    stubFetch({
-      "cooking.nytimes.com": "",
-      "www.seriouseats.com": seriousEatsHtml,
-      "www.bonappetit.com": "",
-      "www.epicurious.com": "",
-    });
+    stubFetch({ "www.seriouseats.com": seriousEatsHtml });
 
     const { seriousEats } = await fetchRecipeData("tacos");
 
@@ -176,8 +236,6 @@ describe("fetchRecipeData", () => {
   it("reads Epicurious and Bon Appétit results from the non-deferred preloaded state", async () => {
     const html = preloadedStateHtml([epicuriousItem]);
     stubFetch({
-      "cooking.nytimes.com": "",
-      "www.seriouseats.com": "",
       "www.bonappetit.com": html,
       "www.epicurious.com": html,
     });
@@ -201,8 +259,6 @@ describe("fetchRecipeData", () => {
 
   it("returns no results for a source whose page lacks preloaded state", async () => {
     stubFetch({
-      "cooking.nytimes.com": "",
-      "www.seriouseats.com": "",
       "www.bonappetit.com": "<html><body>blocked</body></html>",
       "www.epicurious.com": preloadedStateHtml([epicuriousItem]),
     });
@@ -211,5 +267,96 @@ describe("fetchRecipeData", () => {
 
     expect(bonAppetit).toEqual([]);
     expect(epicurious).toHaveLength(1);
+  });
+
+  it("extracts Molly Baz cards without search highlighting or tracking params", async () => {
+    stubFetch({ "mollybaz.com": mollyBazHtml });
+
+    const { mollyBaz } = await fetchRecipeData("spaghetti");
+
+    expect(mollyBaz).toEqual([
+      {
+        title: "End of Summer Spaghetti-O’s",
+        img: "https://mollybaz.com/wp-content/uploads/spaghetti-os.jpg",
+        link: "https://mollybaz.com/spaghetti-os/",
+        author: undefined,
+        description: undefined,
+        meta: {
+          rating: undefined,
+          ratingCount: undefined,
+          time: undefined,
+          tags: undefined,
+        },
+      },
+    ]);
+  });
+
+  it("searches every page of the Ottolenghi catalogue, ranking title matches first", async () => {
+    stubFetch({
+      [ottolenghiHost]: ottolenghiCatalogue([
+        [
+          ottolenghiRecipe("Miso trofie", {
+            main_ingredient: ["Pasta"],
+            meal: ["Mains"],
+          }),
+          ottolenghiRecipe("Charred green beans", { meal: ["Sides"] }),
+          ottolenghiRecipe("Unpublished pasta", {}, null),
+        ],
+        [
+          ottolenghiRecipe("Cheat’s XO pasta", {
+            main_ingredient: ["Pasta"],
+            collection: ["Easy", "Dairy free"],
+          }),
+        ],
+      ]),
+    });
+
+    const { ottolenghi } = await fetchRecipeData("Pasta");
+
+    expect(ottolenghi).toEqual([
+      {
+        title: "Cheat’s XO pasta",
+        description: "Cheat’s XO pasta description",
+        img: "https://cdn.shopify.com/Cheat’s XO pasta.jpg",
+        link: "https://ottolenghi.co.uk/pages/recipes/cheat-s-xo-pasta",
+        meta: { tags: "Pasta, Easy, Dairy free" },
+      },
+      {
+        title: "Miso trofie",
+        description: "Miso trofie description",
+        img: "https://cdn.shopify.com/Miso trofie.jpg",
+        link: "https://ottolenghi.co.uk/pages/recipes/miso-trofie",
+        meta: { tags: "Pasta, Mains" },
+      },
+    ]);
+  });
+
+  it("requires every search term to appear in an Ottolenghi recipe's title or tags", async () => {
+    stubFetch({
+      [ottolenghiHost]: ottolenghiCatalogue([
+        [
+          ottolenghiRecipe("Chicken orzo", { main_ingredient: ["Pasta"] }),
+          ottolenghiRecipe("Chicken traybake", {
+            main_ingredient: ["Chicken"],
+          }),
+        ],
+      ]),
+    });
+
+    const { ottolenghi } = await fetchRecipeData("chicken pasta");
+
+    expect(ottolenghi.map((r) => r.title)).toEqual(["Chicken orzo"]);
+  });
+
+  it("returns no Ottolenghi results when the storefront fails, without affecting other sources", async () => {
+    stubFetch({
+      [ottolenghiHost]: new Response("throttled", { status: 429 }),
+      "mollybaz.com": mollyBazHtml,
+    });
+
+    const { ottolenghi, mollyBaz } = await fetchRecipeData("spaghetti");
+
+    expect(ottolenghi).toEqual([]);
+    expect(mollyBaz).toHaveLength(1);
   });
 });
