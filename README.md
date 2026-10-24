@@ -10,3 +10,14 @@ Deployed at <https://forage-drab.vercel.app/>
 
 - [Next.js](https://nextjs.org/)
 - [Mantine](https://mantine.dev/)
+
+## Development
+
+Requires Node.js 22+.
+
+```sh
+npm run dev        # start the dev server
+npm run lint       # oxlint
+npm run typecheck  # tsc --noEmit
+npm test           # vitest
+```

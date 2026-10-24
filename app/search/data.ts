@@ -2,7 +2,7 @@ import { EpicuriousRecipe } from "@/types";
 import { PartialRecord } from "@/util";
 import { capitalize } from "lodash";
 import { HTMLElement as ParserHTMLElement } from "node-html-parser";
-import he from "he";
+import { decode } from "he";
 
 export const sources = [
   "newYorkTimesCooking",
@@ -164,7 +164,7 @@ function epicuriousExtractor(
 
   const str = scriptEl.rawText
     .replace("window.__PRELOADED_STATE__ = ", "")
-    .replace(/\;/g, "");
+    .replace(/;/g, "");
 
   try {
     const data = JSON.parse(str);
@@ -172,8 +172,8 @@ function epicuriousExtractor(
 
     return items.map((item) => {
       return {
-        title: he.decode(item.dangerousHed),
-        description: he.decode(item.dangerousDek),
+        title: decode(item.dangerousHed),
+        description: decode(item.dangerousDek),
         author: item.contributors.author?.items
           .map((item) => item.name)
           .join(", "),
