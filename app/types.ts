@@ -25,5 +25,29 @@ export type EpicuriousRecipe = {
   };
 };
 
+export type MetaobjectField = { value: string } | null;
+
+export type OttolenghiRecipe = {
+  onlineStoreUrl: string | null;
+  title: MetaobjectField;
+  description: MetaobjectField;
+  /** JSON-encoded string arrays */
+  main_ingredient: MetaobjectField;
+  meal: MetaobjectField;
+  collection: MetaobjectField;
+  images: {
+    references: { nodes: { image?: { url: string } }[] } | null;
+  } | null;
+};
+
+export type OttolenghiRecipesResponse = {
+  data: {
+    metaobjects: {
+      nodes: OttolenghiRecipe[];
+      pageInfo: { hasNextPage: boolean; endCursor: string | null };
+    };
+  };
+};
+
 export type CSSVariable = Record<`--${string}`, string | undefined> &
   React.CSSProperties;

@@ -10,6 +10,8 @@ const nextConfig = {
       { hostname: "images.unsplash.com" },
       { hostname: "assets.bonappetit.com" },
       { hostname: "assets.epicurious.com" },
+      { hostname: "cdn.shopify.com" },
+      { hostname: "mollybaz.com" },
     ],
   },
 };

@@ -2,7 +2,7 @@
 
 Forage for your next meal!
 
-Search [New York Times Cooking](https://cooking.nytimes.com/), [bon appetit](https://www.bonappetit.com/), [epicurious](https://www.epicurious.com/) and [serious eats](https://www.seriouseats.com/) in parallel.
+Search [New York Times Cooking](https://cooking.nytimes.com/), [bon appetit](https://www.bonappetit.com/), [epicurious](https://www.epicurious.com/), [serious eats](https://www.seriouseats.com/), [Ottolenghi](https://ottolenghi.co.uk/pages/recipes) and [Molly Baz](https://mollybaz.com/club/all-recipes/) in parallel.
 
 Deployed at <https://forage-drab.vercel.app/>
 
