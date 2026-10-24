@@ -55,12 +55,8 @@ export default function RecipeGrid({ data }: RecipeGridProps) {
       ? "calc((var(--mantine-spacing-sm) * 2) + 210px)"
       : "calc((var(--mantine-spacing-sm) * 2) + 36px)",
   };
-  const cols = defaultGridProps.cols as Record<MantineBreakpoint, number>;
-  if (open) {
-    cols.base = 1;
-    cols.xs = 2;
-    cols.sm = 3;
-  }
+  const defaultCols = defaultGridProps.cols as Record<MantineBreakpoint, number>;
+  const cols = open ? { ...defaultCols, base: 1, xs: 2, sm: 3 } : defaultCols;
 
   return (
     <>

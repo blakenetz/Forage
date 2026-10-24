@@ -7,10 +7,16 @@ on:
     branches:
       - main
 jobs:
+  Checks:
+    uses: ./.github/workflows/ci.yaml
   Deploy-Production:
+    needs: Checks
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: package.json
       - name: Install Vercel CLI
         run: npm install --global vercel@latest
       - name: Pull Vercel Environment Information
