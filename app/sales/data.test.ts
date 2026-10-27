@@ -4,6 +4,7 @@ import { stubFetch } from "@/testing";
 import type { FlippItem, WholeFoodsLocation, WholeFoodsPromotion } from "@/types";
 
 import {
+  dealDiscount,
   flippSaleItem,
   getStoreSales,
   ingredientsOnSale,
@@ -116,7 +117,24 @@ describe("flippSaleItem", () => {
           original_price: 2.49,
         })
       )
-    ).toEqual({ name: "Pringles", price: "$1.49/ea with card", note: "was $2.49" });
+    ).toEqual({
+      name: "Pringles",
+      price: "$1.49/ea with card",
+      note: "was $2.49",
+      discount: expect.closeTo(0.4, 2),
+    });
+  });
+
+  it("reads a multi-buy's discount against the old price of one", () => {
+    expect(
+      flippSaleItem(
+        flippItem("Kroger Beef Shaved Steak", {
+          pre_price_text: "2/",
+          current_price: 10,
+          original_price: 6.99,
+        })
+      ).discount
+    ).toBeCloseTo(0.285, 3);
   });
 
   it("uses the deal itself when there is no price, without the fine print", () => {
@@ -138,6 +156,7 @@ describe("wholeFoodsSaleItem", () => {
       name: "Organic Honeycrisp Apples",
       price: "$2.99/lb",
       note: "$3.32/lb without Prime · regular $3.99/lb",
+      discount: expect.closeTo(0.25, 2),
     });
   });
 
@@ -167,7 +186,40 @@ describe("wholeFoodsSaleItem", () => {
       name: "Organic Chicken Wings",
       price: "Buy 2, Get 1 Free",
       note: "Prime members only · regular $3.99/lb",
+      discount: 1 / 3,
     });
+  });
+
+  it("reads a percentage, a multi-buy or an amount off against a single regular price", () => {
+    const discount = (overrides: Partial<WholeFoodsPromotion>) =>
+      wholeFoodsSaleItem(promotion("Yogurt", overrides)).discount;
+
+    expect(discount({ primePrice: "30% off" })).toBe(0.3);
+    expect(discount({ primePrice: "2 for $4", regularPrice: "$2.59" })).toBeCloseTo(0.228, 3);
+    expect(discount({ primePrice: "$1 off", regularPrice: "$10.00" })).toBeCloseTo(0.1, 3);
+    // a range of regular prices says nothing about this one
+    expect(discount({ primePrice: "$5.99", regularPrice: "$5.99 to $9.99" })).toBeUndefined();
+  });
+});
+
+describe("dealDiscount", () => {
+  it("counts buy-one-get-one-free deals as half off", () => {
+    expect(dealDiscount("Buy one, get one free")).toBe(0.5);
+    expect(dealDiscount("BUY 3, GET 3 FREE of equal or lesser value with card")).toBe(0.5);
+  });
+
+  it("spreads a multi-buy's saving over everything bought", () => {
+    expect(dealDiscount("Buy one, get one 50% off")).toBe(0.25);
+    expect(dealDiscount("BUY 2, GET 1 of equal or lesser value FREE with card")).toBe(1 / 3);
+  });
+
+  it("reads a percentage off or saved", () => {
+    expect(dealDiscount("25% OFF*")).toBe(0.25);
+    expect(dealDiscount("SAVE 50% with card")).toBe(0.5);
+  });
+
+  it("has no discount for a deal without a share off", () => {
+    expect(dealDiscount("SAVE $5 AN EXTRA When you spend $15 or more")).toBeUndefined();
   });
 });
 
@@ -296,6 +348,31 @@ describe("getStoreSales", () => {
         ],
       },
     });
+  });
+
+  it("lists the biggest discounts first, buy-one-get-one-free as half off", async () => {
+    stubFetch({
+      "backflipp.wishabi.com": JSON.stringify({
+        items: [
+          flippItem("Kroger Cage Free Eggs"),
+          flippItem("Prego Pasta Sauce", { current_price: 1.49, original_price: 2.49 }),
+          flippItem("Pepsi", { current_price: null, sale_story: "BUY 3, GET 3 FREE with card" }),
+          flippItem("Heinz Gravy", { current_price: 1.99, original_price: 2.99 }),
+          flippItem("Chex Mix", { current_price: null, sale_story: "BUY 1, GET 1 FREE" }),
+        ],
+      }),
+    });
+
+    const result = await getStoreSales("kingSoopers", { zip: "80207" });
+
+    // deals that don't say how much they save keep their place, last
+    expect(result.status === "found" && result.sales.items.map(({ name }) => name)).toEqual([
+      "Pepsi",
+      "Chex Mix",
+      "Prego Pasta Sauce",
+      "Heinz Gravy",
+      "Kroger Cage Free Eggs",
+    ]);
   });
 
   it("has no Flipp sales where the store has no weekly ad", async () => {

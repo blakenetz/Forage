@@ -12,6 +12,8 @@ export type SaleItem = {
   price?: string;
   /** the regular or member price behind it */
   note?: string;
+  /** the share off the regular price, 0.5 for half off, when the ad says enough to tell */
+  discount?: number;
 };
 
 export type StoreSales = {
@@ -82,6 +84,45 @@ function saleStory(story: string): string {
   return text.charAt(0).toUpperCase() + text.slice(1);
 }
 
+const counts: Record<string, number> = { one: 1, two: 2, three: 3, four: 4, five: 5 };
+
+/**
+ * The share off that a deal's wording promises: "Buy one, get one free" and
+ * "Buy 3, get 3 free" are half off, "Buy one, get one 50% off" a quarter,
+ * "25% off" and "Save 25%" a quarter.
+ */
+export function dealDiscount(deal: string): number | undefined {
+  const text = deal.toLowerCase();
+
+  const multiBuy = text.match(/\bbuy (\w+),? get (\w+)\b(.*)/);
+  if (multiBuy) {
+    const buy = Number(multiBuy[1]) || counts[multiBuy[1]];
+    const get = Number(multiBuy[2]) || counts[multiBuy[2]];
+    const percent = multiBuy[3].match(/(\d+)% off/)?.[1];
+    const off = percent ? Number(percent) / 100 : /\bfree\b/.test(multiBuy[3]) ? 1 : 0;
+    if (buy && get && off) return (get * off) / (buy + get);
+  }
+
+  const percent = text.match(/(\d+)% off|\bsave (\d+)%/);
+  if (percent) return Number(percent[1] ?? percent[2]) / 100;
+
+  return undefined;
+}
+
+/** 1 − what you pay ÷ what it usually costs, when that is a real discount */
+function shareOff(pay: number, usual: number): number | undefined {
+  const share = 1 - pay / usual;
+  return share > 0 && share < 1 ? share : undefined;
+}
+
+/**
+ * Biggest discount first; deals whose discount the ad doesn't say keep their
+ * place in the ad, after the rest. (`sort` is stable.)
+ */
+function byDiscount(items: SaleItem[]): SaleItem[] {
+  return items.toSorted((a, b) => (b.discount ?? -1) - (a.discount ?? -1));
+}
+
 /** Flipp splits a price into "2 FOR" · 4 · "/EA With Card"; this joins it back */
 export function flippSaleItem(item: FlippItem): SaleItem {
   const notes: string[] = [];
@@ -103,10 +144,19 @@ export function flippSaleItem(item: FlippItem): SaleItem {
 
   if (item.original_price !== null) notes.push(`was ${dollars(item.original_price)}`);
 
+  // "2 FOR" $4 against a regular price for one
+  const quantity = Number(item.pre_price_text?.match(/^\s*(\d+)\s*(?:for|\/)/i)?.[1] ?? 1);
+  const discount =
+    (item.sale_story ? dealDiscount(item.sale_story) : undefined) ??
+    (item.current_price !== null && item.original_price
+      ? shareOff(item.current_price / quantity, item.original_price)
+      : undefined);
+
   return {
     name: item.name.trim(),
     price,
     note: notes.length ? notes.join(" · ") : undefined,
+    discount,
   };
 }
 
@@ -153,7 +203,7 @@ async function flippSales(
           new Date(Date.parse(item.valid_to) - 12 * 60 * 60 * 1000).toISOString()
         )
       ),
-      items: unique(groceries.map(flippSaleItem)),
+      items: byDiscount(unique(groceries.map(flippSaleItem))),
     },
   };
 }
@@ -177,11 +227,29 @@ export function wholeFoodsSaleItem(promotion: WholeFoodsPromotion): SaleItem {
     regular && (regular.startsWith("$") ? `regular ${regular}` : regular.toLowerCase()),
   ].filter(Boolean);
 
+  const price = (primeIsPrice ? prime : sale) || undefined;
+
   return {
     name,
-    price: (primeIsPrice ? prime : sale) || undefined,
+    price,
     note: notes.length ? notes.join(" · ") : undefined,
+    discount: price ? (dealDiscount(price) ?? wholeFoodsShareOff(price, regular)) : undefined,
   };
+}
+
+/**
+ * "$2.54/lb" or "2 for $5" against a single regular price ("$2.99/lb");
+ * a regular range ("$1.49 to $7.49") or "Regular prices vary" tells nothing.
+ */
+function wholeFoodsShareOff(price: string, regular: string): number | undefined {
+  const usual = regular.match(/^\$(\d+(?:\.\d+)?)(?:\/\w+| ea)?$/)?.[1];
+  if (!usual) return undefined;
+
+  const amountOff = price.match(/^\$(\d+(?:\.\d+)?) off/)?.[1];
+  if (amountOff) return shareOff(Number(usual) - Number(amountOff), Number(usual));
+
+  const pay = price.match(/^(?:(\d+) for )?\$(\d+(?:\.\d+)?)/);
+  return pay ? shareOff(Number(pay[2]) / Number(pay[1] ?? 1), Number(usual)) : undefined;
 }
 
 const wholeFoods = {
@@ -273,7 +341,7 @@ async function wholeFoodsSales({ zip, near, wholeFoodsStore }: Locale): Promise<
       pricing: "Prime prices",
       // endDate is the last day itself, at midnight Central
       through: lastDay(promotions.map((promotion) => promotion.endDate)),
-      items: unique(promotions.map(wholeFoodsSaleItem)),
+      items: byDiscount(unique(promotions.map(wholeFoodsSaleItem))),
       choices: ranked.map(({ location, miles }) => ({
         id: location.storeCode,
         name: place(location),
