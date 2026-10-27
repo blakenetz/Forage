@@ -88,6 +88,30 @@ details[open] > .storeSummary::after {
   white-space: nowrap;
 }
 
+.storeMenu {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px 14px;
+  margin: -6px 0 18px;
+}
+
+.storeMenu select {
+  font: inherit;
+  color: var(--ink);
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid var(--ink);
+  border-radius: 0;
+  padding: 2px 0;
+  max-width: 100%;
+}
+
+.storeMenu select:focus {
+  outline: none;
+  border-bottom-color: var(--spot);
+}
+
 .prices {
   columns: 3 300px;
   column-gap: 48px;

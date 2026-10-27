@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { zipFor } from "./stores";
+import { nearFor, nearValue, zipFor } from "./stores";
 
 const denver = new Headers({
   "x-vercel-ip-country": "US",
@@ -26,5 +26,20 @@ describe("zipFor", () => {
 
     expect(zipFor({ param: undefined, cookie: undefined, headers: toronto })).toBeUndefined();
     expect(zipFor({ param: undefined, cookie: undefined, headers: new Headers() })).toBeUndefined();
+  });
+});
+
+describe("nearFor", () => {
+  it("applies saved coordinates only to the zip code they were saved with", () => {
+    const saved = nearValue("80204", 39.72425004524048, -105.04536866039788);
+
+    expect(saved).toBe("80204@39.724,-105.045");
+    expect(nearFor(saved, "80204")).toBe("39.724,-105.045");
+    expect(nearFor(saved, "80202")).toBeUndefined();
+  });
+
+  it("ignores a cookie that isn't zip and coordinates", () => {
+    expect(nearFor("80204@somewhere", "80204")).toBeUndefined();
+    expect(nearFor(undefined, "80204")).toBeUndefined();
   });
 });

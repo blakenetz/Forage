@@ -4,13 +4,14 @@ import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 
 import type { Located } from "@/sales/locate/route";
-import { zipParam } from "@/stores";
+import { nearCookie, nearValue, zipParam } from "@/stores";
 
 import styles from "./field-guide.module.css";
 
 /**
  * Asks the browser where the visitor is, only once they click, and opens
- * the sales for that zip code.
+ * the sales for that zip code. The coordinates are kept too, so the nearest
+ * Whole Foods is the nearest to the visitor rather than to the zip code's middle.
  */
 export default function LocateButton() {
   const router = useRouter();
@@ -45,6 +46,8 @@ export default function LocateButton() {
           const { zip }: Located = await res.json();
           if (!zip) return fail("That’s outside the US. Type a zip code.");
 
+          // saved here, not in the URL, so a shared link doesn't carry it
+          document.cookie = `${nearCookie}=${nearValue(zip, coords.latitude, coords.longitude)}; path=/; max-age=${60 * 60 * 24 * 365}; samesite=lax`;
           setLocating(false);
           startNavigation(() =>
             // stay where the form is: the sales chapter or under the search box
@@ -60,7 +63,7 @@ export default function LocateButton() {
             ? "Location is blocked for this site. Type a zip code."
             : "Couldn’t find your location. Type a zip code."
         ),
-      // a zip code doesn't need GPS precision
+      // ranking stores miles apart doesn't need GPS precision
       { enableHighAccuracy: false, maximumAge: 10 * 60 * 1000, timeout: 15_000 }
     );
   }

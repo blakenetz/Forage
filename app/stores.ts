@@ -53,3 +53,28 @@ export function zipFor(visit: {
   if (isZip(visit.cookie)) return visit.cookie;
   return ipZip(visit.headers);
 }
+
+/** Where "Use my location" found the visitor, kept with the zip code it gave */
+export const nearCookie = "forage-near";
+
+/** "80204@39.724,-105.045": about 100 m of precision is plenty to rank stores */
+export function nearValue(zip: string, latitude: number, longitude: number): string {
+  return `${zip}@${latitude.toFixed(3)},${longitude.toFixed(3)}`;
+}
+
+/**
+ * The saved coordinates, "39.724,-105.045", if they were saved for this zip
+ * code; after the visitor types another zip code they no longer apply.
+ */
+export function nearFor(cookie: string | undefined, zip: string): string | undefined {
+  const match = cookie?.match(/^(\d{5})@(-?\d+(?:\.\d+)?,-?\d+(?:\.\d+)?)$/);
+  return match?.[1] === zip ? match[2] : undefined;
+}
+
+/** The Whole Foods store picked from the store menu, by its store id */
+export const storeParam = "store";
+export const wholeFoodsCookie = "forage-whole-foods";
+
+export function isStoreId(value: unknown): value is string {
+  return typeof value === "string" && /^\d{5}$/.test(value);
+}

@@ -40,7 +40,8 @@ export async function GET(request: NextRequest) {
     if (!res.ok) throw new Error(`Census geocoder returned ${res.status}`);
 
     // when overloaded it answers 200 with an HTML error page, which fails here
-    ({ geographies } = ((await res.json()) as CensusGeographies).result);
+    const body: CensusGeographies = await res.json();
+    geographies = body.result.geographies;
   } catch (error) {
     console.log(error);
 

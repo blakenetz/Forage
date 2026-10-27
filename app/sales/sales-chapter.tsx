@@ -1,12 +1,20 @@
+import Form from "next/form";
 import Link from "next/link";
 import { Suspense } from "react";
 
 import fieldGuide from "@/components/field-guide.module.css";
+import SearchButton from "@/components/search-button";
 import ZipForm from "@/components/zip-form";
 import { searchParam } from "@/sources";
-import { storeInfo, stores, type Store } from "@/stores";
+import { storeInfo, storeParam, stores, type Store } from "@/stores";
 
-import { getStoreSales, ingredientsOnSale, type SaleItem } from "./data";
+import {
+  getStoreSales,
+  ingredientsOnSale,
+  type Locale,
+  type SaleItem,
+  type StoreSales as Sales,
+} from "./data";
 import styles from "./sales.module.css";
 
 /** The first store's list shows this many before "All 44 on sale" */
@@ -25,9 +33,9 @@ const saleDay = (date: string) =>
 const and = new Intl.ListFormat("en", { type: "conjunction" });
 const or = new Intl.ListFormat("en", { type: "disjunction" });
 
-async function Summary({ zip }: { zip: string }) {
+async function Summary({ locale }: { locale: Locale }) {
   const results = await Promise.all(
-    stores.map((store) => getStoreSales(store, zip))
+    stores.map((store) => getStoreSales(store, locale))
   );
   const named = (status: string) =>
     stores
@@ -45,15 +53,15 @@ async function Summary({ zip }: { zip: string }) {
       {answered.length
         ? `${total.toLocaleString("en-US")} groceries on sale at ${counted[answered.length]} ${answered.length === 1 ? "store" : "stores"}.`
         : "No weekly sales to show."}
-      {missing.length > 0 && ` No ${or.format(missing)} near ${zip}.`}
+      {missing.length > 0 && ` No ${or.format(missing)} near ${locale.zip}.`}
       {failed.length > 0 && ` ${and.format(failed)} didn’t answer this time.`}
     </p>
   );
 }
 
 /** Every ingredient on sale, as searches of all four kitchens */
-async function SaleSearches({ zip }: { zip: string }) {
-  const ingredients = await ingredientsOnSale(zip);
+async function SaleSearches({ locale }: { locale: Locale }) {
+  const ingredients = await ingredientsOnSale(locale);
   if (!ingredients.length) return null;
 
   return (
@@ -97,19 +105,42 @@ function StoreName({ store }: { store: Store }) {
 }
 
 /**
+ * The nearby stores, nearest first, as a GET form that works without
+ * JavaScript; the choice is remembered and beats the nearest store.
+ */
+function StoreMenu({ choices, chosen }: Required<Pick<Sales, "choices" | "chosen">>) {
+  return (
+    <Form action="/" scroll={false} className={styles.storeMenu}>
+      <label htmlFor="whole-foods-store" className={fieldGuide.note}>
+        Your store
+      </label>
+      <select id="whole-foods-store" name={storeParam} defaultValue={chosen}>
+        {choices.map(({ id, name, miles }) => (
+          <option key={id} value={id}>
+            {name} ({miles.toFixed(1)} mi)
+          </option>
+        ))}
+      </select>
+      <SearchButton label="Use this store" pendingLabel="Switching…" />
+    </Form>
+  );
+}
+
+/**
  * The first store's prices are laid open; the others wait in a closed
  * `<details>`, which opens in place without client JavaScript.
  */
 async function StoreSales({
   store,
-  zip,
+  locale,
   open,
 }: {
   store: Store;
-  zip: string;
+  locale: Locale;
   open: boolean;
 }) {
-  const result = await getStoreSales(store, zip);
+  const result = await getStoreSales(store, locale);
+  const { zip } = locale;
   const { name, domain } = storeInfo[store];
 
   if (result.status !== "found")
@@ -124,7 +155,7 @@ async function StoreSales({
       </div>
     );
 
-  const { url, location, through, items } = result.sales;
+  const { url, location, through, items, choices, chosen } = result.sales;
   const until = through ? `through ${saleDay(through)}` : undefined;
   const where = location ? `Prices at ${location}` : `The weekly ad around ${zip}`;
   // a closed store shows its end date in the summary instead
@@ -162,6 +193,11 @@ async function StoreSales({
     <div className={styles.store}>
       <StoreName store={store} />
       {source}
+      {choices && chosen && choices.length > 1 && (
+        // keyed so the menu shows the new store after a client-side navigation;
+        // `defaultValue` alone only applies on first render
+        <StoreMenu key={chosen} choices={choices} chosen={chosen} />
+      )}
       <PriceList items={items.slice(0, visiblePrices)} />
       {rest.length > 0 && (
         <details className={fieldGuide.more}>
@@ -178,24 +214,30 @@ async function StoreSales({
   );
 }
 
-/** The landing page's last chapter: this week's sales at the stores near `zip` */
-export default function SalesChapter({ zip, numeral }: { zip: string; numeral: string }) {
+/** The landing page's last chapter: this week's sales at the stores around the locale */
+export default function SalesChapter({
+  locale,
+  numeral,
+}: {
+  locale: Locale;
+  numeral: string;
+}) {
   return (
     <section id="sales" className={styles.chapter}>
       <div className={fieldGuide.chapter}>
         <span className={fieldGuide.numeral}>{numeral}.</span>
-        <h2 className={fieldGuide.chapterTitle}>On sale near {zip}</h2>
+        <h2 className={fieldGuide.chapterTitle}>On sale near {locale.zip}</h2>
       </div>
 
       <div className={styles.head}>
         <Suspense fallback={<p className={styles.summary}>Reading three weekly ads…</p>}>
-          <Summary zip={zip} />
+          <Summary locale={locale} />
         </Suspense>
-        <ZipForm zip={zip} />
+        <ZipForm zip={locale.zip} />
       </div>
 
       <Suspense>
-        <SaleSearches zip={zip} />
+        <SaleSearches locale={locale} />
       </Suspense>
 
       {stores.map((store, i) => (
@@ -208,7 +250,7 @@ export default function SalesChapter({ zip, numeral }: { zip: string; numeral: s
             </div>
           }
         >
-          <StoreSales store={store} zip={zip} open={i === 0} />
+          <StoreSales store={store} locale={locale} open={i === 0} />
         </Suspense>
       ))}
     </section>

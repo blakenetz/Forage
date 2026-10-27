@@ -22,6 +22,19 @@ export type StoreSales = {
   /** the last day of the sale, YYYY-MM-DD */
   through?: string;
   items: SaleItem[];
+  /** the nearby stores to choose from instead, nearest first (Whole Foods) */
+  choices?: { id: string; name: string; miles: number }[];
+  /** which of `choices` the prices are for */
+  chosen?: string;
+};
+
+/** Where the sales are for: a zip code and, for Whole Foods, where in it and which store */
+export type Locale = {
+  zip: string;
+  /** "39.724,-105.045", from "Use my location" */
+  near?: string;
+  /** a Whole Foods store id picked from the store menu */
+  wholeFoodsStore?: string;
 };
 
 export type SalesResult =
@@ -173,8 +186,26 @@ const wholeFoods = {
   nextData: /<script id="__NEXT_DATA__"[^>]*>([\s\S]*?)<\/script>/,
 };
 
-/** The store finder page embeds its stores, nearest first, in an `a-state` script */
-async function nearestWholeFoods(zip: string): Promise<WholeFoodsLocation | undefined> {
+/** Miles between two points, as the crow flies */
+function miles(
+  [lat1, lon1]: [number, number],
+  [lat2, lon2]: [number, number]
+): number {
+  const radians = Math.PI / 180;
+  const a =
+    Math.sin(((lat2 - lat1) * radians) / 2) ** 2 +
+    Math.cos(lat1 * radians) *
+      Math.cos(lat2 * radians) *
+      Math.sin(((lon2 - lon1) * radians) / 2) ** 2;
+
+  return 2 * 3958.8 * Math.asin(Math.sqrt(a));
+}
+
+/**
+ * The store finder page embeds the stores around a zip code in an `a-state`
+ * script, nearest to the middle of the zip code first.
+ */
+async function wholeFoodsAround(zip: string): Promise<WholeFoodsLocation[]> {
   const res = await fetch(
     `https://www.wholefoodsmarket.com/aplf/list?${new URLSearchParams({
       almBrandId: wholeFoods.brand,
@@ -190,13 +221,31 @@ async function nearestWholeFoods(zip: string): Promise<WholeFoodsLocation | unde
   if (!state) throw new Error("Whole Foods store finder has no store list");
 
   const { locations }: { locations: WholeFoodsLocation[] } = JSON.parse(state);
-  return locations[0];
+  return locations;
 }
 
-/** The sales flyer page server-renders the store's promotions into `__NEXT_DATA__` */
-async function wholeFoodsSales(zip: string): Promise<SalesResult> {
-  const location = await nearestWholeFoods(zip);
-  if (!location) return { status: "none" };
+/**
+ * The store whose flyer to read: the one picked from the menu if it is
+ * around this zip code, else the nearest to the visitor's location when
+ * known, else the nearest to the middle of the zip code. A zip code covers
+ * miles, so its middle can be closer to another store than the visitor is.
+ */
+async function wholeFoodsSales({ zip, near, wholeFoodsStore }: Locale): Promise<SalesResult> {
+  const around = await wholeFoodsAround(zip);
+  if (!around.length) return { status: "none" };
+
+  // "39.724,-105.045", already checked by `nearFor`
+  const [latitude, longitude] = near?.split(",").map(Number) ?? [];
+  const ranked = around
+    .map((location) => ({
+      location,
+      miles: near
+        ? miles([latitude, longitude], [location.geocode.latitude, location.geocode.longitude])
+        : location.distance,
+    }))
+    .sort((a, b) => a.miles - b.miles);
+  const { location } =
+    ranked.find(({ location }) => location.storeCode === wholeFoodsStore) ?? ranked[0];
 
   const url = `${storeInfo.wholeFoods.flyerUrl}?store-id=${location.storeCode}`;
   const res = await fetch(url, { headers: requestHeaders, next: { revalidate } });
@@ -207,30 +256,43 @@ async function wholeFoodsSales(zip: string): Promise<SalesResult> {
 
   const promotions: WholeFoodsPromotion[] =
     JSON.parse(json).props.pageProps.promotions ?? [];
+  const place = ({ locationName, address }: WholeFoodsLocation) =>
+    [locationName, address.addressLines[0]].filter(Boolean).join(", ");
 
   return {
     status: "found",
     sales: {
       url,
-      location: [location.locationName, location.address.addressLines[0]]
-        .filter(Boolean)
-        .join(", "),
+      location: place(location),
       // endDate is the last day itself, at midnight Central
       through: lastDay(promotions.map((promotion) => promotion.endDate)),
       items: unique(promotions.map(wholeFoodsSaleItem)),
+      choices: ranked.map(({ location, miles }) => ({
+        id: location.storeCode,
+        name: place(location),
+        miles,
+      })),
+      chosen: location.storeCode,
     },
   };
 }
 
 /**
  * Memoised per request, so the page's sections share a single fetch per
- * store. A store that errors is reported as failed rather than breaking the page.
+ * store. `cache` matches arguments by identity, hence the locale's parts
+ * as separate strings. A store that errors is reported as failed rather
+ * than breaking the page.
  */
-export const getStoreSales = cache(
-  async (store: Store, zip: string): Promise<SalesResult> => {
+const storeSales = cache(
+  async (
+    store: Store,
+    zip: string,
+    near?: string,
+    wholeFoodsStore?: string
+  ): Promise<SalesResult> => {
     try {
       return store === "wholeFoods"
-        ? await wholeFoodsSales(zip)
+        ? await wholeFoodsSales({ zip, near, wholeFoodsStore })
         : await flippSales(store, zip);
     } catch (error) {
       console.log(error);
@@ -240,10 +302,17 @@ export const getStoreSales = cache(
   }
 );
 
-/** The ingredients on sale at the stores near `zip` that answered, best first */
-export async function ingredientsOnSale(zip: string): Promise<SaleIngredient[]> {
+export function getStoreSales(
+  store: Store,
+  { zip, near, wholeFoodsStore }: Locale
+): Promise<SalesResult> {
+  return storeSales(store, zip, near, wholeFoodsStore);
+}
+
+/** The ingredients on sale at the stores around the locale that answered, best first */
+export async function ingredientsOnSale(locale: Locale): Promise<SaleIngredient[]> {
   const results = await Promise.all(
-    stores.map((store) => getStoreSales(store, zip))
+    stores.map((store) => getStoreSales(store, locale))
   );
 
   return saleIngredients(

@@ -8,12 +8,21 @@ import { Plates } from "@/components/plates";
 import SearchForm from "@/components/search-form";
 import ZipForm from "@/components/zip-form";
 import { getCollections } from "@/collections";
-import { ingredientsOnSale } from "@/sales/data";
+import { ingredientsOnSale, type Locale } from "@/sales/data";
 import { featuredIngredients } from "@/sales/ingredients";
 import SalesChapter from "@/sales/sales-chapter";
 import { inSeason } from "@/seasons";
 import { searchParam, sourceInfo, sources } from "@/sources";
-import { zipCookie, zipFor, zipParam } from "@/stores";
+import {
+  isStoreId,
+  nearCookie,
+  nearFor,
+  storeParam,
+  wholeFoodsCookie,
+  zipCookie,
+  zipFor,
+  zipParam,
+} from "@/stores";
 
 import styles from "./page.module.css";
 
@@ -42,12 +51,12 @@ const searchLink = (term: string) =>
   `/search?${new URLSearchParams({ [searchParam]: term })}`;
 
 /** Beside "In season now": the top ingredients on sale, as searches */
-async function OnSale({ zip }: { zip: string }) {
-  const ingredients = (await ingredientsOnSale(zip)).slice(0, featuredIngredients);
+async function OnSale({ locale }: { locale: Locale }) {
+  const ingredients = (await ingredientsOnSale(locale)).slice(0, featuredIngredients);
 
   return (
     <p className={styles.season}>
-      <span className={fieldGuide.note}>On sale near {zip}:</span>
+      <span className={fieldGuide.note}>On sale near {locale.zip}:</span>
       {ingredients.map(({ term }) => (
         // a prefetch would run a search against every source
         <Link key={term} prefetch={false} href={searchLink(term)}>
@@ -66,12 +75,22 @@ export default async function Home({
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  const param = (await searchParams)[zipParam];
+  const params = await searchParams;
+  const jar = await cookies();
   const zip = zipFor({
-    param: typeof param === "string" ? param.trim() : undefined,
-    cookie: (await cookies()).get(zipCookie)?.value,
+    param: typeof params[zipParam] === "string" ? params[zipParam].trim() : undefined,
+    cookie: jar.get(zipCookie)?.value,
     headers: await headers(),
   });
+  const store = params[storeParam];
+  const locale: Locale | undefined = zip
+    ? {
+        zip,
+        near: nearFor(jar.get(nearCookie)?.value, zip),
+        // a store just picked from the menu, before its cookie comes back
+        wholeFoodsStore: isStoreId(store) ? store : jar.get(wholeFoodsCookie)?.value,
+      }
+    : undefined;
   const { edition, seasonal, chapters } = await loadLanding();
   const withCollections = new Set(chapters.map(({ source }) => source));
 
@@ -102,7 +121,7 @@ export default async function Home({
               </Link>
             ))}
           </p>
-          {zip ? (
+          {locale ? (
             <Suspense
               fallback={
                 <p className={styles.season}>
@@ -112,7 +131,7 @@ export default async function Home({
                 </p>
               }
             >
-              <OnSale zip={zip} />
+              <OnSale locale={locale} />
             </Suspense>
           ) : (
             <div className={styles.zip}>
@@ -179,7 +198,7 @@ export default async function Home({
         </section>
       ))}
 
-      {zip && <SalesChapter zip={zip} numeral={salesNumeral} />}
+      {locale && <SalesChapter locale={locale} numeral={salesNumeral} />}
     </main>
   );
 }

@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi, type Mock } from "vitest";
 
 import { stubFetch } from "@/testing";
 import type { FlippItem, WholeFoodsLocation, WholeFoodsPromotion } from "@/types";
@@ -50,11 +50,41 @@ function salesFlyerPage(promotions: WholeFoodsPromotion[]) {
   return `<html><body><script id="__NEXT_DATA__" type="application/json">${data}</script></body></html>`;
 }
 
+// the stores around 80204, as far from the zip code's middle as the store finder says
 const unionStation: WholeFoodsLocation = {
   storeCode: "10626",
   locationName: "Union Station",
   address: { addressLines: ["1701 Wewatta St"], city: "Denver" },
+  geocode: { latitude: 39.7542, longitude: -105.0014 },
+  distance: 1.66,
 };
+const capitolHill: WholeFoodsLocation = {
+  storeCode: "10746",
+  locationName: "Capitol Hill Denver",
+  address: { addressLines: ["900 East 11th Avenue"], city: "Denver" },
+  geocode: { latitude: 39.7334, longitude: -104.9776 },
+  distance: 2.36,
+};
+const belmar: WholeFoodsLocation = {
+  storeCode: "10218",
+  locationName: "Belmar",
+  address: { addressLines: ["444 S Wadsworth Blvd"], city: "Lakewood" },
+  geocode: { latitude: 39.7083, longitude: -105.0815 },
+  distance: 3.7,
+};
+
+/** Answers the store finder with `around`, and any flyer with apples */
+function stubWholeFoods(around: WholeFoodsLocation[]) {
+  return stubFetch({
+    "www.wholefoodsmarket.com": (_, url) =>
+      url.pathname === "/aplf/list"
+        ? storeFinderPage(around)
+        : salesFlyerPage([promotion("Honeycrisp Apples")]),
+  });
+}
+
+const flyerStore = (fetchMock: Mock<typeof fetch>) =>
+  new URL(String(fetchMock.mock.calls[1][0])).searchParams.get("store-id");
 
 describe("flippSaleItem", () => {
   it("joins a multi-buy price back together", () => {
@@ -147,14 +177,11 @@ describe("getStoreSales", () => {
     vi.restoreAllMocks();
   });
 
-  it("reads the sales flyer of the Whole Foods nearest the zip code", async () => {
+  it("reads the sales flyer of the Whole Foods nearest the zip code's middle", async () => {
     const fetchMock = stubFetch({
       "www.wholefoodsmarket.com": (_, url) =>
         url.pathname === "/aplf/list"
-          ? storeFinderPage([
-              unionStation,
-              { ...unionStation, storeCode: "10746", locationName: "Capitol Hill" },
-            ])
+          ? storeFinderPage([unionStation, capitolHill])
           : salesFlyerPage([
               promotion("Honeycrisp Apples"),
               promotion("Parmigiano Reggiano", { endDate: "2026-10-25T05:00:00Z" }),
@@ -162,10 +189,9 @@ describe("getStoreSales", () => {
             ]),
     });
 
-    const result = await getStoreSales("wholeFoods", "80202");
+    const result = await getStoreSales("wholeFoods", { zip: "80202" });
 
-    const flyerUrl = new URL(String(fetchMock.mock.calls[1][0]));
-    expect(flyerUrl.searchParams.get("store-id")).toBe("10626");
+    expect(flyerStore(fetchMock)).toBe("10626");
     expect(result).toEqual({
       status: "found",
       sales: {
@@ -176,14 +202,55 @@ describe("getStoreSales", () => {
           expect.objectContaining({ name: "Organic Honeycrisp Apples" }),
           expect.objectContaining({ name: "Organic Parmigiano Reggiano" }),
         ],
+        choices: [
+          { id: "10626", name: "Union Station, 1701 Wewatta St", miles: 1.66 },
+          { id: "10746", name: "Capitol Hill Denver, 900 East 11th Avenue", miles: 2.36 },
+        ],
+        chosen: "10626",
       },
     });
+  });
+
+  it("picks the Whole Foods nearest the visitor's location over the zip code's middle", async () => {
+    const fetchMock = stubWholeFoods([unionStation, capitolHill, belmar]);
+
+    // near Alameda and Sheridan, in the far west of 80204
+    const result = await getStoreSales("wholeFoods", {
+      zip: "80204",
+      near: "39.724,-105.045",
+    });
+
+    expect(flyerStore(fetchMock)).toBe("10218");
+    const { choices } = result.status === "found" ? result.sales : {};
+    expect(choices?.map(({ id }) => id)).toEqual(["10218", "10626", "10746"]);
+    expect(choices?.[0].miles).toBeCloseTo(2.2, 1);
+  });
+
+  it("reads the store picked from the menu, over the nearest", async () => {
+    const fetchMock = stubWholeFoods([unionStation, capitolHill, belmar]);
+
+    await getStoreSales("wholeFoods", {
+      zip: "80205",
+      near: "39.724,-105.045",
+      wholeFoodsStore: "10746",
+    });
+
+    expect(flyerStore(fetchMock)).toBe("10746");
+  });
+
+  it("ignores a picked store that isn't around the zip code", async () => {
+    const fetchMock = stubWholeFoods([unionStation, capitolHill]);
+
+    // Belmar was picked, then the visitor looked up another part of town
+    await getStoreSales("wholeFoods", { zip: "80206", wholeFoodsStore: "10218" });
+
+    expect(flyerStore(fetchMock)).toBe("10626");
   });
 
   it("has no Whole Foods sales where the store finder lists no store", async () => {
     stubFetch({ "www.wholefoodsmarket.com": storeFinderPage([]) });
 
-    expect(await getStoreSales("wholeFoods", "99701")).toEqual({ status: "none" });
+    expect(await getStoreSales("wholeFoods", { zip: "99701" })).toEqual({ status: "none" });
   });
 
   it("reports Whole Foods as failed when the flyer page lacks its data", async () => {
@@ -192,7 +259,7 @@ describe("getStoreSales", () => {
         url.pathname === "/aplf/list" ? storeFinderPage([unionStation]) : "<html></html>",
     });
 
-    expect(await getStoreSales("wholeFoods", "80203")).toEqual({ status: "failed" });
+    expect(await getStoreSales("wholeFoods", { zip: "80203" })).toEqual({ status: "failed" });
   });
 
   it("keeps the store's groceries from Flipp, ending on the ad's local last day", async () => {
@@ -208,7 +275,7 @@ describe("getStoreSales", () => {
       }),
     });
 
-    const result = await getStoreSales("kingSoopers", "80202");
+    const result = await getStoreSales("kingSoopers", { zip: "80202" });
 
     const searchUrl = new URL(String(fetchMock.mock.calls[0][0]));
     expect(searchUrl.searchParams.get("postal_code")).toBe("80202");
@@ -233,13 +300,13 @@ describe("getStoreSales", () => {
       }),
     });
 
-    expect(await getStoreSales("sprouts", "94301")).toEqual({ status: "none" });
+    expect(await getStoreSales("sprouts", { zip: "94301" })).toEqual({ status: "none" });
   });
 
   it("reports Flipp as failed when it refuses the request", async () => {
     stubFetch({ "backflipp.wishabi.com": new Response("", { status: 503 }) });
 
-    expect(await getStoreSales("sprouts", "80204")).toEqual({ status: "failed" });
+    expect(await getStoreSales("sprouts", { zip: "80204" })).toEqual({ status: "failed" });
   });
 });
 
@@ -262,7 +329,7 @@ describe("ingredientsOnSale", () => {
         }),
     });
 
-    const ingredients = await ingredientsOnSale("80205");
+    const ingredients = await ingredientsOnSale({ zip: "80205" });
 
     expect(ingredients.map(({ term, deals }) => [term, deals.map(({ store }) => store)])).toEqual([
       ["apples", ["kingSoopers", "sprouts"]],

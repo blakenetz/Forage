@@ -9,7 +9,7 @@ import styles from "./field-guide.module.css";
 /** A GET form to the landing page's sales, like the recipe search form, or the browser's location */
 export default function ZipForm({ zip, label }: { zip?: string; label?: string }) {
   return (
-    <Form action="/" className={`${styles.search} ${styles.zipForm}`}>
+    <Form action="/" scroll={false} className={`${styles.search} ${styles.zipForm}`}>
       {label && (
         <label htmlFor="sales-zip" className={styles.searchLabel}>
           {label}

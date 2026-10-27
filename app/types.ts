@@ -79,12 +79,15 @@ export type FlippItem = {
   valid_to: string;
 };
 
-/** A store in the Whole Foods store finder (/aplf/list), nearest first */
+/** A store in the Whole Foods store finder (/aplf/list), nearest the zip code's middle first */
 export type WholeFoodsLocation = {
   /** the store id the sales flyer takes, e.g. "10626" */
   storeCode: string;
   locationName: string;
   address: { addressLines: string[]; city: string };
+  geocode: { latitude: number; longitude: number };
+  /** miles from the middle of the zip code */
+  distance: number;
 };
 
 /** A promotion in the Whole Foods sales flyer's `__NEXT_DATA__` */
