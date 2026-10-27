@@ -1,0 +1,129 @@
+.chapter {
+  padding-top: 56px;
+  scroll-margin-top: 12px;
+}
+
+.head {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px 48px;
+  padding-left: 52px;
+}
+
+.summary {
+  font-style: italic;
+  color: var(--ink-2);
+}
+
+.empty {
+  font-style: italic;
+  color: var(--ink-2);
+}
+
+/* every ingredient on sale, as searches; matches the "In season now" line */
+
+.searches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  margin-top: 22px;
+  padding-left: 52px;
+}
+
+.searches a {
+  border-bottom: 1px solid var(--rule);
+}
+
+.searches a:hover {
+  border-bottom-color: var(--spot);
+}
+
+/* a store's price list */
+
+.store {
+  margin-top: 32px;
+  padding-left: 52px;
+}
+
+.storeName {
+  font-weight: 400;
+  font-style: italic;
+  font-size: 24px;
+}
+
+.storeSummary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 16px;
+  list-style: none;
+  cursor: pointer;
+}
+
+.storeSummary::-webkit-details-marker {
+  display: none;
+}
+
+.storeSummary::after {
+  content: "Show the prices";
+  font-style: italic;
+  border-bottom: 1px solid var(--spot);
+}
+
+details[open] > .storeSummary::after {
+  content: "Hide the prices";
+}
+
+.storeNote {
+  margin: 4px 0 16px;
+  font-style: italic;
+  color: var(--ink-2);
+}
+
+.flyerLink {
+  font-style: italic;
+  border-bottom: 1px solid var(--spot);
+  white-space: nowrap;
+}
+
+.prices {
+  columns: 3 300px;
+  column-gap: 48px;
+  list-style: none;
+}
+
+.price {
+  display: grid;
+  grid-template-columns: minmax(0, auto) 1fr auto;
+  gap: 0 8px;
+  align-items: baseline;
+  padding: 5px 0;
+  break-inside: avoid;
+}
+
+.leader {
+  min-width: 16px;
+  border-bottom: 1px dotted var(--ink-2);
+  transform: translateY(-5px);
+}
+
+.priceAmount {
+  color: var(--spot);
+  text-align: right;
+  max-width: 18ch;
+}
+
+.priceNote {
+  composes: captionFace from "../components/field-guide.module.css";
+  grid-column: 1 / -1;
+}
+
+@media (max-width: 720px) {
+  .head,
+  .searches,
+  .store {
+    padding-left: 36px;
+  }
+}

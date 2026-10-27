@@ -39,19 +39,29 @@ describe("getCollections", () => {
     vi.useRealTimers();
   });
 
-  it("reads NYT Cooking's seasonal feature and newest recipes from its home page data", async () => {
+  it("reads NYT Cooking's first two featured collections and newest recipes from its home page data", async () => {
     stubFetch({
       "cooking.nytimes.com": nytHomePage({
-        collectionPackage: {
-          firstCollection: {
-            title: "Easy Fall Baking",
-            url: "https://cooking.nytimes.com/68861692-nyt-cooking/44793461-easy-fall-baking",
+        featuredCollections: [
+          {
+            name: "Halloween Cookie and Candy Recipes",
+            url: "https://cooking.nytimes.com/68861692-nyt-cooking/250199-halloween-cookie-candy-recipes",
             cardData: [
               nytCard("How to Make Pie Crust", { type: "guide" }),
               ...["Apple Crisp", "Pumpkin Bread", "Spice Cake", "Scones", "Crumb Cake", "Galette", "Cobbler"].map((title) => nytCard(title)),
             ],
           },
-        },
+          {
+            name: "Healthy Soups and Stews",
+            url: "https://cooking.nytimes.com/68861692-nyt-cooking/healthy-soups",
+            cardData: [nytCard("Lentil Soup")],
+          },
+          {
+            name: "Easy Chicken Recipes for Busy Weeknights",
+            url: "https://cooking.nytimes.com/68861692-nyt-cooking/easy-chicken",
+            cardData: [nytCard("Chicken Thighs")],
+          },
+        ],
         newestRecipesCollection: {
           title: "Our Newest Recipes",
           url: "https://cooking.nytimes.com/68861692-nyt-cooking/32998034-our-newest-recipes",
@@ -67,11 +77,18 @@ describe("getCollections", () => {
       }),
     });
 
-    const [fallBaking, newest] = await getCollections("newYorkTimesCooking");
+    const collections = await getCollections("newYorkTimesCooking");
+    const [halloween, soups, newest] = collections;
 
-    expect(fallBaking.title).toBe("Easy Fall Baking");
+    // NYT's order, and only the first two it features
+    expect(collections.map(({ title }) => title)).toEqual([
+      "Halloween Cookie and Candy Recipes",
+      "Healthy Soups and Stews",
+      "Our Newest Recipes",
+    ]);
+    expect(soups.recipes.map((recipe) => recipe.title)).toEqual(["Lentil Soup"]);
     // guides are skipped and each collection shows six recipes
-    expect(fallBaking.recipes.map((recipe) => recipe.title)).toEqual([
+    expect(halloween.recipes.map((recipe) => recipe.title)).toEqual([
       "Apple Crisp",
       "Pumpkin Bread",
       "Spice Cake",
@@ -79,7 +96,7 @@ describe("getCollections", () => {
       "Crumb Cake",
       "Galette",
     ]);
-    expect(fallBaking.recipes[0]).toEqual({
+    expect(halloween.recipes[0]).toEqual({
       title: "Apple Crisp",
       link: "https://cooking.nytimes.com/recipes/apple-crisp",
       img: "https://static01.nyt.com/Apple Crisp.jpg",

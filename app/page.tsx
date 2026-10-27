@@ -1,17 +1,24 @@
+import { cookies, headers } from "next/headers";
 import Link from "next/link";
+import { Suspense } from "react";
 
 import ChapterHeading from "@/components/chapter-heading";
 import fieldGuide from "@/components/field-guide.module.css";
 import { Plates } from "@/components/plates";
 import SearchForm from "@/components/search-form";
+import ZipForm from "@/components/zip-form";
 import { getCollections } from "@/collections";
+import { ingredientsOnSale } from "@/sales/data";
+import { featuredIngredients } from "@/sales/ingredients";
+import SalesChapter from "@/sales/sales-chapter";
 import { inSeason } from "@/seasons";
 import { searchParam, sourceInfo, sources } from "@/sources";
+import { zipCookie, zipFor, zipParam } from "@/stores";
 
 import styles from "./page.module.css";
 
-/** Prerendered, then rebuilt at most hourly as the sources' collections change */
-export const revalidate = 3600;
+/** The sales chapter follows the kitchens' */
+const salesNumeral = "V";
 
 /** Everything the landing page shows that depends on the source sites or today's date */
 async function loadLanding() {
@@ -19,6 +26,7 @@ async function loadLanding() {
   const chapters = await Promise.all(
     sources.map(async (source) => ({
       source,
+      // each source's pages are cached for an hour
       collections: await getCollections(source),
     }))
   );
@@ -30,7 +38,40 @@ async function loadLanding() {
   };
 }
 
-export default async function Home() {
+const searchLink = (term: string) =>
+  `/search?${new URLSearchParams({ [searchParam]: term })}`;
+
+/** Beside "In season now": the top ingredients on sale, as searches */
+async function OnSale({ zip }: { zip: string }) {
+  const ingredients = (await ingredientsOnSale(zip)).slice(0, featuredIngredients);
+
+  return (
+    <p className={styles.season}>
+      <span className={fieldGuide.note}>On sale near {zip}:</span>
+      {ingredients.map(({ term }) => (
+        // a prefetch would run a search against every source
+        <Link key={term} prefetch={false} href={searchLink(term)}>
+          {term}
+        </Link>
+      ))}
+      <a href="#sales" className={styles.salesLink}>
+        The weekly sales
+      </a>
+    </p>
+  );
+}
+
+export default async function Home({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const param = (await searchParams)[zipParam];
+  const zip = zipFor({
+    param: typeof param === "string" ? param.trim() : undefined,
+    cookie: (await cookies()).get(zipCookie)?.value,
+    headers: await headers(),
+  });
   const { edition, seasonal, chapters } = await loadLanding();
   const withCollections = new Set(chapters.map(({ source }) => source));
 
@@ -55,16 +96,29 @@ export default async function Home() {
           <p className={styles.season}>
             <span className={fieldGuide.note}>In season now:</span>
             {seasonal.map((item) => (
-              <Link
-                key={item}
-                // a prefetch would run a search against every source
-                prefetch={false}
-                href={`/search?${new URLSearchParams({ [searchParam]: item })}`}
-              >
+              // a prefetch would run a search against every source
+              <Link key={item} prefetch={false} href={searchLink(item)}>
                 {item}
               </Link>
             ))}
           </p>
+          {zip ? (
+            <Suspense
+              fallback={
+                <p className={styles.season}>
+                  <span className={fieldGuide.note}>
+                    On sale near {zip}: reading the weekly ads…
+                  </span>
+                </p>
+              }
+            >
+              <OnSale zip={zip} />
+            </Suspense>
+          ) : (
+            <div className={styles.zip}>
+              <ZipForm label="What’s on sale near you" />
+            </div>
+          )}
         </div>
 
         <nav aria-labelledby="contents" className={styles.contents}>
@@ -87,6 +141,14 @@ export default async function Home() {
                 </li>
               );
             })}
+            {zip && (
+              <li>
+                <span className={styles.contentsNumeral}>{salesNumeral}.</span>
+                <a href="#sales">On sale near {zip}</a>
+                <span className={styles.leader} />
+                <span className={fieldGuide.note}>weekly sales</span>
+              </li>
+            )}
           </ol>
           <p className={styles.colophon}>
             Every recipe stays on its own site. Forage searches all four at once
@@ -116,6 +178,8 @@ export default async function Home() {
           ))}
         </section>
       ))}
+
+      {zip && <SalesChapter zip={zip} numeral={salesNumeral} />}
     </main>
   );
 }

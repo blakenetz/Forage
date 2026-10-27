@@ -219,6 +219,46 @@
   font-size: 30px;
 }
 
+.zipForm {
+  max-width: 360px;
+}
+
+.zipForm input {
+  font-variant-numeric: lining-nums;
+}
+
+.locate {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  margin-top: 8px;
+  font-size: 16px;
+}
+
+.locate button {
+  font: inherit;
+  font-style: italic;
+  color: var(--ink-2);
+  background: none;
+  border: 0;
+  border-bottom: 1px solid var(--rule);
+  cursor: pointer;
+}
+
+.locate button:hover {
+  color: var(--ink);
+  border-bottom-color: var(--spot);
+}
+
+.locate button:disabled {
+  cursor: progress;
+}
+
+.locateProblem {
+  font-style: italic;
+  color: var(--spot);
+}
+
 .searchButton {
   font: inherit;
   color: var(--spot);
