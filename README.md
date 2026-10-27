@@ -2,7 +2,11 @@
 
 Forage for your next meal!
 
-Search [New York Times Cooking](https://cooking.nytimes.com/), [Serious Eats](https://www.seriouseats.com/), [Ottolenghi](https://ottolenghi.co.uk/pages/recipes) and [Molly Baz](https://mollybaz.com/club/all-recipes/) at once. Each site's results stream in as it answers. The home page shows collections pulled from the sites themselves (NYT Cooking's seasonal feature and newest recipes, Serious Eats' newest recipes, Ottolenghi's newest and seasonal recipes, Molly Baz's recent and most popular) and is rebuilt hourly.
+Search [New York Times Cooking](https://cooking.nytimes.com/), [Serious Eats](https://www.seriouseats.com/), [Ottolenghi](https://ottolenghi.co.uk/pages/recipes) and [Molly Baz](https://mollybaz.com/club/all-recipes/) at once. Each site's results stream in as it answers. The home page shows collections pulled from the sites themselves (the first two collections NYT Cooking features plus its newest recipes, Serious Eats' newest recipes, Ottolenghi's newest and seasonal recipes, Molly Baz's recent and most popular), refetched at most hourly.
+
+After the kitchens, the home page shows **what's on sale** this week at the nearest [Whole Foods Market](https://www.wholefoodsmarket.com/sales-flyer), [King Soopers](https://www.kingsoopers.com/weeklyad) and [Sprouts](https://www.sprouts.com/weekly-ad/): each store's price list, biggest discount first (buy-one-get-one-free counts as half off; deals that don't say how much they save come last), and every ingredient on sale as a search of all four kitchens (the top five also sit beside "In season now"). Whole Foods comes from its own store finder and sales flyer; King Soopers and Sprouts from their weekly ads as [Flipp](https://flipp.com/) reads them. The zip code is the one asked for (`/?zip=80202`), else the last one asked for (kept in a cookie), else the one Vercel derives from the visitor's IP address (city-level, deployed only); "Use my location" turns the browser's coordinates into a zip code through the [US Census geocoder](https://geocoding.geo.census.gov/geocoder/).
+
+The Whole Foods store is the one picked from the "Your store" menu (remembered), else the nearest to the visitor's location when "Use my location" found it, else the nearest to the middle of the zip code. A zip code spans miles, so its middle can sit closer to a different store than the visitor does.
 
 Deployed at <https://forage-drab.vercel.app/>
 

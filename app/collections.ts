@@ -32,8 +32,13 @@ async function nytCollections(): Promise<Collection[]> {
 
   const props: NytHomeProps = JSON.parse(json).props.pageProps;
 
-  // the seasonal feature (e.g. "Easy Fall Baking"), then the newest recipes
-  return [props.collectionPackage?.firstCollection, props.newestRecipesCollection]
+  // the first two collections NYT features (e.g. "Halloween Cookie and Candy
+  // Recipes"), in NYT's order, then the newest recipes
+  const featured = (props.featuredCollections ?? [])
+    .slice(0, 2)
+    .map(({ name, ...collection }) => ({ title: name, ...collection }));
+
+  return [...featured, props.newestRecipesCollection]
     .filter((collection): collection is NytCollection => !!collection)
     .map((collection) => ({
       title: collection.title,

@@ -46,6 +46,20 @@
   border-bottom-color: var(--spot);
 }
 
+/* the second line, "On sale near 80202", sits closer to the first */
+.season + .season {
+  margin-top: 8px;
+}
+
+.season a.salesLink {
+  font-style: italic;
+  border-bottom-color: var(--spot);
+}
+
+.zip {
+  margin-top: 36px;
+}
+
 .contentsTitle {
   font-weight: 400;
   font-size: 20px;
