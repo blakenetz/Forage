@@ -19,6 +19,8 @@ export type StoreSales = {
   url: string;
   /** the store the prices are for, when the source names one */
   location?: string;
+  /** whose prices the list leads with, when not everyone's: "Prime prices" */
+  pricing?: string;
   /** the last day of the sale, YYYY-MM-DD */
   through?: string;
   items: SaleItem[];
@@ -156,7 +158,11 @@ async function flippSales(
   };
 }
 
-/** "Prime: 30% off" is only worth showing when it is a price, not a footnote */
+/**
+ * Prime members' price first, with what everyone else pays beneath it. The
+ * Prime column sometimes holds a footnote ("*Excluded from the extra 10%
+ * off") instead of a price; then the sale price is everyone's.
+ */
 export function wholeFoodsSaleItem(promotion: WholeFoodsPromotion): SaleItem {
   const name = `${promotion.originBrandName.trim()} ${promotion.productName.trim()}`
     .replace(/\s+/g, " ")
@@ -167,13 +173,13 @@ export function wholeFoodsSaleItem(promotion: WholeFoodsPromotion): SaleItem {
   const regular = promotion.regularPrice.trim();
 
   const notes = [
-    sale && primeIsPrice && `${prime} with Prime`,
+    primeIsPrice && (sale ? `${sale} without Prime` : "Prime members only"),
     regular && (regular.startsWith("$") ? `regular ${regular}` : regular.toLowerCase()),
   ].filter(Boolean);
 
   return {
     name,
-    price: sale || (primeIsPrice ? `${prime} with Prime` : undefined),
+    price: (primeIsPrice ? prime : sale) || undefined,
     note: notes.length ? notes.join(" · ") : undefined,
   };
 }
@@ -264,6 +270,7 @@ async function wholeFoodsSales({ zip, near, wholeFoodsStore }: Locale): Promise<
     sales: {
       url,
       location: place(location),
+      pricing: "Prime prices",
       // endDate is the last day itself, at midnight Central
       through: lastDay(promotions.map((promotion) => promotion.endDate)),
       items: unique(promotions.map(wholeFoodsSaleItem)),

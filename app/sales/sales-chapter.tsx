@@ -155,9 +155,11 @@ async function StoreSales({
       </div>
     );
 
-  const { url, location, through, items, choices, chosen } = result.sales;
+  const { url, location, pricing, through, items, choices, chosen } = result.sales;
   const until = through ? `through ${saleDay(through)}` : undefined;
-  const where = location ? `Prices at ${location}` : `The weekly ad around ${zip}`;
+  const where = location
+    ? `${pricing ?? "Prices"} at ${location}`
+    : `The weekly ad around ${zip}`;
   // a closed store shows its end date in the summary instead
   const source = (
     <p className={styles.storeNote}>

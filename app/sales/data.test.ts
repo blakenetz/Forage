@@ -133,11 +133,11 @@ describe("flippSaleItem", () => {
 });
 
 describe("wholeFoodsSaleItem", () => {
-  it("reads the sale price, with the Prime and regular prices behind it", () => {
+  it("leads with the Prime price, with the price without Prime and the regular price beneath", () => {
     expect(wholeFoodsSaleItem(promotion("Honeycrisp Apples"))).toEqual({
       name: "Organic Honeycrisp Apples",
-      price: "$3.32/lb",
-      note: "$2.99/lb with Prime · regular $3.99/lb",
+      price: "$2.99/lb",
+      note: "$3.32/lb without Prime · regular $3.99/lb",
     });
   });
 
@@ -158,12 +158,16 @@ describe("wholeFoodsSaleItem", () => {
     });
   });
 
-  it("falls back to the Prime price when only members get a deal", () => {
+  it("says so when only Prime members get a deal", () => {
     expect(
       wholeFoodsSaleItem(
         promotion("Chicken Wings", { salePrice: "", primePrice: "Buy 2, Get 1 Free" })
-      ).price
-    ).toBe("Buy 2, Get 1 Free with Prime");
+      )
+    ).toEqual({
+      name: "Organic Chicken Wings",
+      price: "Buy 2, Get 1 Free",
+      note: "Prime members only · regular $3.99/lb",
+    });
   });
 });
 
@@ -197,6 +201,7 @@ describe("getStoreSales", () => {
       sales: {
         url: "https://www.wholefoodsmarket.com/sales-flyer?store-id=10626",
         location: "Union Station, 1701 Wewatta St",
+        pricing: "Prime prices",
         through: "2026-10-27",
         items: [
           expect.objectContaining({ name: "Organic Honeycrisp Apples" }),
