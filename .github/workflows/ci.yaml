@@ -18,3 +18,7 @@ jobs:
         run: npm run typecheck
       - name: Test
         run: npm test
+      # the deploy workflows build with `vercel build`; this catches a broken
+      # build on the pull request, under the required "Checks" status
+      - name: Build
+        run: npm run build
