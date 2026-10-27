@@ -142,22 +142,32 @@ export function flippSaleItem(item: FlippItem): SaleItem {
     price = saleStory(item.sale_story);
   }
 
-  if (item.original_price !== null) notes.push(`was ${dollars(item.original_price)}`);
-
   // "2 FOR" $4 against a regular price for one
   const quantity = Number(item.pre_price_text?.match(/^\s*(\d+)\s*(?:for|\/)/i)?.[1] ?? 1);
-  const discount =
-    (item.sale_story ? dealDiscount(item.sale_story) : undefined) ??
-    (item.current_price !== null && item.original_price
+  const stated = item.sale_story ? dealDiscount(item.sale_story) : undefined;
+  const workedOut =
+    stated === undefined && item.current_price !== null && item.original_price
       ? shareOff(item.current_price / quantity, item.original_price)
-      : undefined);
+      : undefined;
+
+  if (workedOut !== undefined) notes.push(percentOff(workedOut));
+  if (item.original_price !== null) notes.push(`was ${dollars(item.original_price)}`);
 
   return {
     name: item.name.trim(),
     price,
-    note: notes.length ? notes.join(" · ") : undefined,
-    discount,
+    note: notes.filter(Boolean).join(" · ") || undefined,
+    discount: stated ?? workedOut,
   };
+}
+
+/**
+ * A discount the ad only implies, by its sale and regular prices, as words
+ * beside them: 0.182 → "18% off". One that rounds to nothing goes unsaid.
+ */
+function percentOff(share: number): string {
+  const percent = Math.round(share * 100);
+  return percent ? `${percent}% off` : "";
 }
 
 const flippMerchants: Record<Exclude<Store, "wholeFoods">, string> = {
@@ -222,18 +232,22 @@ export function wholeFoodsSaleItem(promotion: WholeFoodsPromotion): SaleItem {
   const primeIsPrice = prime && !prime.startsWith("*");
   const regular = promotion.regularPrice.trim();
 
+  const price = (primeIsPrice ? prime : sale) || undefined;
+  const stated = price ? dealDiscount(price) : undefined;
+  const workedOut =
+    price && stated === undefined ? wholeFoodsShareOff(price, regular) : undefined;
+
   const notes = [
+    workedOut !== undefined && percentOff(workedOut),
     primeIsPrice && (sale ? `${sale} without Prime` : "Prime members only"),
     regular && (regular.startsWith("$") ? `regular ${regular}` : regular.toLowerCase()),
   ].filter(Boolean);
-
-  const price = (primeIsPrice ? prime : sale) || undefined;
 
   return {
     name,
     price,
     note: notes.length ? notes.join(" · ") : undefined,
-    discount: price ? (dealDiscount(price) ?? wholeFoodsShareOff(price, regular)) : undefined,
+    discount: stated ?? workedOut,
   };
 }
 

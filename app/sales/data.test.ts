@@ -120,7 +120,7 @@ describe("flippSaleItem", () => {
     ).toEqual({
       name: "Pringles",
       price: "$1.49/ea with card",
-      note: "was $2.49",
+      note: "40% off · was $2.49",
       discount: expect.closeTo(0.4, 2),
     });
   });
@@ -155,9 +155,38 @@ describe("wholeFoodsSaleItem", () => {
     expect(wholeFoodsSaleItem(promotion("Honeycrisp Apples"))).toEqual({
       name: "Organic Honeycrisp Apples",
       price: "$2.99/lb",
-      note: "$3.32/lb without Prime · regular $3.99/lb",
+      note: "25% off · $3.32/lb without Prime · regular $3.99/lb",
       discount: expect.closeTo(0.25, 2),
     });
+  });
+
+  it("works out the share off from the Prime and regular prices, and says it", () => {
+    expect(
+      wholeFoodsSaleItem(
+        promotion("Red, Bosc or Bartlett Pears", {
+          regularPrice: "$3.29/lb",
+          salePrice: "$2.99/lb",
+          primePrice: "$2.69/lb",
+        })
+      )
+    ).toEqual({
+      name: "Organic Red, Bosc or Bartlett Pears",
+      price: "$2.69/lb",
+      note: "18% off · $2.99/lb without Prime · regular $3.29/lb",
+      discount: expect.closeTo(0.182, 3),
+    });
+  });
+
+  it("doesn't repeat a share off the price already states", () => {
+    expect(
+      wholeFoodsSaleItem(
+        promotion("Pasta Sauces", {
+          regularPrice: "$8.29",
+          salePrice: "22% off",
+          primePrice: "30% off",
+        })
+      ).note
+    ).toBe("22% off without Prime · regular $8.29");
   });
 
   it("skips a Prime footnote that is not a price", () => {
