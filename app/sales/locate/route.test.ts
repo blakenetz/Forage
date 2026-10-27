@@ -48,9 +48,13 @@ describe("GET /sales/locate", () => {
     expect((await locate(request("/sales/locate?lat=95&lon=0"))).status).toBe(400);
   });
 
-  it("reports the geocoder failing", async () => {
-    stubFetch({ "geocoding.geo.census.gov": new Response("", { status: 503 }) });
+  it("reports the geocoder failing, including an HTML error page sent as a success", async () => {
+    vi.spyOn(console, "log").mockImplementation(() => {});
 
+    stubFetch({ "geocoding.geo.census.gov": new Response("", { status: 503 }) });
+    expect((await locate(request("/sales/locate?lat=39.7&lon=-105"))).status).toBe(502);
+
+    stubFetch({ "geocoding.geo.census.gov": "<!DOCTYPE html><html>Service unavailable</html>" });
     expect((await locate(request("/sales/locate?lat=39.7&lon=-105"))).status).toBe(502);
   });
 });
